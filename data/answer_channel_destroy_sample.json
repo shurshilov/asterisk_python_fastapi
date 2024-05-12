@@ -1,0 +1,25 @@
+{
+  "type": "ChannelDestroyed",
+  "timestamp": "2024-05-12T15:12:46.597+0300",
+  "cause": 16,
+  "cause_txt": "Normal Clearing",
+  "channel": {
+    "id": "1715515942.70715",
+    "name": "Local/9222222222@from-internal-0000499d;1",
+    "state": "Up",
+    "caller": { "name": "<unknown>", "number": "3021" },
+    "connected": { "name": "���� ���������", "number": "+9111111111" },
+    "accountcode": "",
+    "dialplan": {
+      "context": "macro-dial",
+      "exten": "s",
+      "priority": 1,
+      "app_name": "AppDial",
+      "app_data": "(Outgoing Line)"
+    },
+    "creationtime": "2024-05-12T15:12:22.274+0300",
+    "language": "ru"
+  },
+  "asterisk_id": "52:54:00:02:46:7d",
+  "application": "AsteriskAgentPython"
+}

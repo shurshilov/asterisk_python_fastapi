@@ -1,0 +1,50 @@
+{
+  "type": "ChannelDestroyed",
+  "timestamp": "2024-05-12T16:08:47.415+0300",
+  "cause": 16,
+  "cause_txt": "Normal Clearing",
+  "channel": {
+    "id": "1715519324.70731",
+    "name": "SIP/302-0000810b",
+    "state": "Ringing",
+    "caller": { "name": "302", "number": "302" },
+    "connected": { "name": "Podozrenie na spam", "number": "+79111111111" },
+    "accountcode": "",
+    "dialplan": {
+      "context": "stanislav",
+      "exten": "3020",
+      "priority": 1,
+      "app_name": "AppDial",
+      "app_data": "(Outgoing Line)"
+    },
+    "creationtime": "2024-05-12T16:08:44.281+0300",
+    "language": "ru"
+  },
+  "asterisk_id": "52:54:00:02:46:7d",
+  "application": "AsteriskAgentPython"
+}
+{
+  "type": "ChannelDestroyed",
+  "timestamp": "2024-05-12T16:08:47.750+0300",
+  "cause": 16,
+  "cause_txt": "Normal Clearing",
+  "channel": {
+    "id": "1715519323.70730",
+    "name": "SIP/9222222222_out-0000810a",
+    "state": "Up",
+    "caller": { "name": "��� �����", "number": "+79111111111" },
+    "connected": { "name": "Stanislav", "number": "302" },
+    "accountcode": "",
+    "dialplan": {
+      "context": "ext-group",
+      "exten": "h",
+      "priority": 1,
+      "app_name": "",
+      "app_data": ""
+    },
+    "creationtime": "2024-05-12T16:08:43.780+0300",
+    "language": "ru"
+  },
+  "asterisk_id": "52:54:00:02:46:7d",
+  "application": "AsteriskAgentPython"
+}
