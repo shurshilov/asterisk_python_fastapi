@@ -26,6 +26,11 @@ class DatabaseStrategy:
         did varchar(255) NOT NULL default '',
         recordingfile varchar(255) NOT NULL default ''
     )ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+    if cdr table have answer,start,end instead native:
+        start = calldate
+        end = start + duration
+        answer = start + (duration - billsec)
     """
 
     def __init__(self, config: Config) -> None:
