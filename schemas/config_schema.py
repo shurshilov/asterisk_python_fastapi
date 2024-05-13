@@ -30,6 +30,7 @@ class Config(BaseSettings):
     db_user: str
     db_password: str
     db_dialect: Literal["mysql", "postgresql", "sqlite"]
+    db_table_cdr_name: str
 
     # ARI
     ari_url: HttpURL

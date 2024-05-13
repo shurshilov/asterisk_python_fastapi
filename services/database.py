@@ -17,7 +17,7 @@ class SqliteStrategy(DatabaseStrategy):
         async with aiosqlite.connect(self.config.db_host) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute(
-                "SELECT * FROM cdr where start >= %s and start <= %s limit 100000;",
+                f"SELECT * FROM {Config.db_table_cdr_name} where start >= %s and start <= %s limit 100000;",
                 [start_date, end_date],
             ) as cursor:
                 rows = await cursor.fetchall()
@@ -38,7 +38,7 @@ class MysqlStrategy(DatabaseStrategy):
 
         cur = await conn.cursor()
         await cur.execute(
-            "SELECT * FROM cdr where start >= %s and start <= %s limit 100000;",
+            f"SELECT * FROM {Config.db_table_cdr_name} where start >= %s and start <= %s limit 100000;",
             (start_date, end_date),
         )
         rows = await cur.fetchall()
@@ -55,7 +55,7 @@ class PostgresqlStrategy(DatabaseStrategy):
         conn = await aiopg.connect(dsn)
         cur = await conn.cursor()
         await cur.execute(
-            "SELECT * FROM cdr where start >= %s and start <= %s limit 100000;",
+            f"SELECT * FROM {Config.db_table_cdr_name} where start >= %s and start <= %s limit 100000;",
             (start_date, end_date),
         )
         rows = await cur.fetchall()
