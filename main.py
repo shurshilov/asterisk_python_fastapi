@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_401_UNAUTHORIZED,
+    HTTP_422_UNPROCESSABLE_ENTITY,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 
@@ -45,10 +46,22 @@ log = logging.getLogger("asterisk_agent")
 
 app = FastAPI(
     title="Asterisk Agent",
-    description="Light web server for calls history and webhook feature",
+    description="Light web server for calls history and webhook features",
     version=VERSION,
     docs_url=None,
     redoc_url=None,
+    responses={
+        HTTP_400_BAD_REQUEST: {
+            "description": "Business Logic Error",
+        },
+        HTTP_401_UNAUTHORIZED: {
+            "description": "Unauthorized",
+        },
+        HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Validation Error"},
+        HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Internal Server Error",
+        },
+    },
 )
 app.add_middleware(
     CORSMiddleware,
@@ -140,9 +153,11 @@ async def start() -> None:
     # read and validate config file
     config = Config()  # type: ignore
     ari = Ari(api_key=config.api_key, ari_url=str(config.ari_url))
+
     app.state.config = config
     app.state.ari = ari
     app.state.connector_database = get_db_connector(config)
+
     log.info("start check cdr version...")
     try:
         await app.state.connector_database.check_cdr_old()
