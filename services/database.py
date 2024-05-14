@@ -68,9 +68,11 @@ class SqliteStrategy(DatabaseStrategy):
                     result.append(row)
         return result
 
+
 class MysqlStrategy(DatabaseStrategy):
     async def get_conn_cur(self):
         import aiomysql
+
         conn = await aiomysql.connect(
             host=self.config.db_host,
             port=self.config.db_port,
@@ -119,9 +121,7 @@ class PostgresqlStrategy(DatabaseStrategy):
     async def check_cdr_old(self):
         conn, cur = await self.get_conn_cur()
         await cur.execute(
-            f"SELECT column_name 
-              FROM information_schema.columns 
-              WHERE table_name='{self.config.db_table_cdr_name}' and column_name='calldate'"
+            f"SELECT column_name FROM information_schema.columns WHERE table_name='{self.config.db_table_cdr_name}' and column_name='calldate'"
         )
 
         rows = await cur.fetchall()

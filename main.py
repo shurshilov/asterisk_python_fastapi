@@ -77,8 +77,11 @@ async def start() -> None:
     ari = Ari(api_key=config.api_key, ari_url=str(config.ari_url))
     app.state.config = config
     app.state.ari = ari
-    connector_database = get_db_connector(config)
-    await connector_database.check_cdr_old()
+    try:
+        connector_database = get_db_connector(config)
+        await connector_database.check_cdr_old()
+    except Exception as e:
+        log.exception("Unknown check_cdr_old error: %s", e)
 
     app.state.background_tasks = [
         asyncio.create_task(producer_webhook(config)),
