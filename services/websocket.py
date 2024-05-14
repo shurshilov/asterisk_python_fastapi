@@ -178,10 +178,8 @@ class WebsocketEvents:
             async with websockets.connect(self.websocket_url) as websocket:
                 self.connected = True
                 self.last_connected_time = str(datetime.datetime.now())
-                print("Connected to server succesfully")
                 log.info("Connected to server succesfully")
                 # subscribe = await self.send_subscribe()
-                # print(subscribe)
                 # log.info(subscribe)
 
                 while True:
@@ -190,7 +188,6 @@ class WebsocketEvents:
                     if message_json["type"] in self.webhook_events_denied:
                         continue
 
-                    print(f"Received: {message}")
                     log.info(f"Received: {message}")
 
                     if self.webhook_events_allow:
@@ -203,7 +200,6 @@ class WebsocketEvents:
                     await self.send_webhook_event(payload=message_json)
 
         except asyncio.CancelledError:
-            print("graceful stop webscoket client start_consumer")
             log.info("graceful stop webscoket client start_consumer")
             await websocket.close()
         except Exception as e:

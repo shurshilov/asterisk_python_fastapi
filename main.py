@@ -4,8 +4,10 @@
 import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
-from fastapi import FastAPI
+import sys
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from const import VERSION
 from dependencies.db import get_db_connector
@@ -26,8 +28,9 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S",
     level="INFO",
-    handlers=[log_file_handler],
+    handlers=[log_file_handler, logging.StreamHandler(sys.stdout)],
 )
+
 log = logging.getLogger("asterisk_agent")
 
 app = FastAPI(
@@ -43,6 +46,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(router)
+
+
+@app.exception_handler(Exception)
+async def catch_exception_handler(request: Request, exc: Exception):
+    raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 async def producer_webhook(config: Config, timeout: int = 30) -> None:
@@ -78,10 +86,12 @@ async def start() -> None:
     app.state.config = config
     app.state.ari = ari
     app.state.connector_database = get_db_connector(config)
+    log.info("start check cdr version...")
     try:
         await app.state.connector_database.check_cdr_old()
     except Exception as e:
         log.exception("Unknown check_cdr_old error: %s", e)
+    log.info("end check cdr version")
 
     app.state.background_tasks = [
         asyncio.create_task(producer_webhook(config)),

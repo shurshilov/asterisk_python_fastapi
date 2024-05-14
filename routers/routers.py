@@ -11,7 +11,6 @@ import httpx
 from pydantic import AwareDatetime
 
 from dependencies.auth import verify_basic_auth
-from dependencies.db import get_db_connector
 from const import VERSION
 from schemas.config_schema import Config
 from services.ari import Ari
@@ -133,55 +132,34 @@ async def checkup(req: Request):
 async def calls_history(
     req: Request, start_date: AwareDatetime, end_date: AwareDatetime
 ):
-    try:
-        log.info("HISTORY")
-        if start_date >= end_date:
-            raise HTTPException(
-                status_code=400,
-                detail="The start date cannot be greater than or equal to the end date",
-            )
+    log.info("HISTORY")
 
-        connector_database: PostgresqlStrategy | MysqlStrategy | SqliteStrategy = (
-            req.app.state.connector_database
-        )
-
-        return await connector_database.get_cdr(start_date, end_date)
-
-    except Exception as e:
-        log.exception("Unknown calls_history error: %s", e.__context__)
+    if start_date >= end_date:
         raise HTTPException(
-            status_code=500,
-            detail="Internal server error. Watch log file please.",
+            status_code=400,
+            detail="The start date cannot be greater than or equal to the end date",
         )
+
+    connector_database: PostgresqlStrategy | MysqlStrategy | SqliteStrategy = (
+        req.app.state.connector_database
+    )
+
+    return await connector_database.get_cdr(start_date, end_date)
 
 
 @router.get("/api/numbers/")
 async def numbers(req: Request):
-    try:
-        log.info("NUMBERS")
+    log.info("NUMBERS")
 
-        ari: Ari = req.app.state.ari
-        return await ari.numbers()
-
-    except Exception as e:
-        log.exception("Unknown /api/numbers/ error: %s", e.__context__)
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error. Watch log file please.",
-        )
+    ari: Ari = req.app.state.ari
+    # answer already in json
+    res = await ari.numbers()
+    return json.loads(res)
 
 
 @router.get("/api/call/recording")
 async def call_recording(req: Request, id: str):
-    try:
-        log.info("RECORDING")
+    log.info("RECORDING")
 
-        ari: Ari = req.app.state.ari
-        return await ari.call_recording(id)
-
-    except Exception as e:
-        log.exception("Unknown /api/call/recording error: %s", e.__context__)
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error. Watch log file please.",
-        )
+    ari: Ari = req.app.state.ari
+    return await ari.call_recording(id)

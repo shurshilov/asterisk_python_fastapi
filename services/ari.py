@@ -33,22 +33,16 @@ class Ari:
             }
             ]
         """
-        try:
-            async with httpx.AsyncClient() as client:
-                path = f"endpoints?api_key={self.api_key}"
-                r = await client.get(f"{posixpath.join(self.ari_url, path)}")
-                r.raise_for_status()
-                return r.text
-        except Exception as e:
-            log.exception("Unknown ari numbers error: %s", e)
+        async with httpx.AsyncClient() as client:
+            path = f"endpoints?api_key={self.api_key}"
+            r = await client.get(f"{posixpath.join(self.ari_url, path)}")
+            r.raise_for_status()
+            return r.text
 
     async def call_recording(self, id: str):
         """return ARI recorgings"""
-        try:
-            async with httpx.AsyncClient() as client:
-                path = f"/recordings/stored/{id}/file?api_key={self.api_key}"
-                r = await client.get(f"{posixpath.join(self.ari_url, path)}")
-                r.raise_for_status()
-                return r.content
-        except Exception as e:
-            log.exception("Unknown ari call_recording error: %s", e)
+        async with httpx.AsyncClient() as client:
+            path = f"/recordings/stored/{id}/file?api_key={self.api_key}"
+            r = await client.get(f"{posixpath.join(self.ari_url, path)}")
+            r.raise_for_status()
+            return r.content
