@@ -3,17 +3,22 @@
 
 import base64
 from typing import Annotated, Literal
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from pydantic import UrlConstraints
 from pydantic_core import Url
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 HttpURL = Annotated[
     Url, UrlConstraints(allowed_schemes=["http", "https"], max_length=2048)
 ]
-WsURL = Annotated[Url, UrlConstraints(allowed_schemes=["ws", "wss"], max_length=2048)]
+WsURL = Annotated[
+    Url, UrlConstraints(allowed_schemes=["ws", "wss"], max_length=2048)
+]
 
 
 class Config(BaseSettings):
+    """Read from disk and validate .env conf file"""
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
@@ -40,22 +45,12 @@ class Config(BaseSettings):
 
     @property
     def api_key(self):
+        """Asterisk ARI api key auth. For read data from ARI."""
         return f"{self.ari_login}:{self.ari_password}"
 
     @property
     def api_key_base64(self):
+        """HTTP basic header api key auth. For send data to webhook."""
         api_key_bytes = base64.b64encode(bytes(self.api_key, "utf-8"))
         api_key_base64 = api_key_bytes.decode("utf-8")
         return api_key_base64
-
-    # @field_serializer("webhook_url")
-    # def serialize_webhook_url(self, url: HttpURL):
-    #     return str(url)
-
-    # @field_serializer("ari_url")
-    # def serialize_ari_url(self, url: HttpURL):
-    #     return str(url)
-
-    # @field_serializer("ari_wss")
-    # def serialize_ari_wss(self, url: WsURL):
-    #     return str(url)

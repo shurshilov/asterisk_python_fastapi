@@ -5,13 +5,14 @@ import datetime
 import json
 import logging
 import posixpath
+
+import httpx
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
-import httpx
 from pydantic import AwareDatetime
 
-from dependencies.auth import verify_basic_auth
 from const import VERSION
+from dependencies.auth import verify_basic_auth
 from exceptions.exceptions import BusinessError
 from schemas.config_schema import Config
 from services.ari import Ari
@@ -55,25 +56,25 @@ async def checkup(req: Request):
     try:
         result["info"]["checkup_db"]["dialect"] = config.db_dialect
 
-        connector_database: PostgresqlStrategy | MysqlStrategy | SqliteStrategy = (
-            req.app.state.connector_database
-        )
+        connector_database: (
+            PostgresqlStrategy | MysqlStrategy | SqliteStrategy
+        ) = req.app.state.connector_database
 
         result["info"]["checkup_db"][
             "cdr_start_field"
         ] = connector_database.cdr_start_field
 
-        start_date = (datetime.datetime.now() - datetime.timedelta(days=3)).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        start_date = (
+            datetime.datetime.now() - datetime.timedelta(days=3)
+        ).strftime("%Y-%m-%d %H:%M:%S")
         end_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         rows = await connector_database.get_cdr(start_date, end_date)
 
         result["info"]["checkup_db"]["history_last_call"] = (
             rows[0] if len(rows) else str(rows)
         )
-    except Exception as e:
-        result["info"]["checkup_db"]["error"] = str(e)
+    except Exception as exc:
+        result["info"]["checkup_db"]["error"] = str(exc)
         result["status"]["checkup_db"] = "error"
 
     # 2 Asterisk ARI
@@ -87,8 +88,8 @@ async def checkup(req: Request):
             checkup_ari.raise_for_status()
 
             result["info"]["checkup_ari"] = json.loads(checkup_ari.text)
-    except Exception as e:
-        result["info"]["checkup_ari"] = str(e)
+    except Exception as exc:
+        result["info"]["checkup_ari"] = str(exc)
         result["status"]["checkup_ari"] = "error"
 
     # 3. Webhook connect
@@ -103,8 +104,8 @@ async def checkup(req: Request):
             ] = f"status code {checkup_webhook_url.status_code}"
             if checkup_webhook_url.status_code != 200:
                 result["status"]["checkup_webhook_url"] = "error"
-    except Exception as e:
-        result["info"]["checkup_webhook_url"] = str(e)
+    except Exception as exc:
+        result["info"]["checkup_webhook_url"] = str(exc)
         result["status"]["checkup_webhook_url"] = "error"
 
     # 4. Websocket last message
@@ -123,8 +124,8 @@ async def checkup(req: Request):
             result["info"]["checkup_websocket"][
                 "disconnected_reason"
             ] = req.app.state.websocket_client.disconnected_reason
-    except Exception as e:
-        result["info"]["checkup_websocket"]["error"] = str(e)
+    except Exception as exc:
+        result["info"]["checkup_websocket"]["error"] = str(exc)
         result["status"]["checkup_websocket"] = "error"
 
     log.info(result)
@@ -135,6 +136,18 @@ async def checkup(req: Request):
 async def calls_history(
     req: Request, start_date: AwareDatetime, end_date: AwareDatetime
 ):
+    """Return calls history
+
+    Arguments:
+        start_date -- start date of calls
+        end_date -- end date of calls
+
+    Raises:
+        BusinessError: The start date cannot be greater than or equal to the end date
+
+    Returns:
+        cdr list of calls
+    """
     log.info("HISTORY")
 
     if start_date >= end_date:
@@ -151,6 +164,11 @@ async def calls_history(
 
 @router.get("/api/numbers/")
 async def numbers(req: Request):
+    """Return numbers (endpoints) Asterisk
+
+    Returns:
+        list of numbers
+    """
     log.info("NUMBERS")
 
     ari: Ari = req.app.state.ari
@@ -161,6 +179,14 @@ async def numbers(req: Request):
 
 @router.get("/api/call/recording")
 async def call_recording(req: Request, id: str):
+    """Return binary record of call
+
+    Arguments:
+        id -- filename
+
+    Returns:
+        binary record
+    """
     log.info("RECORDING")
 
     ari: Ari = req.app.state.ari

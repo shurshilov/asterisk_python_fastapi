@@ -5,6 +5,7 @@ import asyncio
 import datetime
 import json
 import logging
+
 import httpx
 import websockets
 
@@ -50,18 +51,23 @@ class WebsocketEvents:
         self.webhook_events_allow = webhook_events_allow
 
     async def send_webhook_event(self, payload):
+        """send asterisk event to customer webhook url
+
+        Arguments:
+            payload -- asterisk event
+        """
         try:
             async with httpx.AsyncClient() as client:
-                r = await client.post(
+                res = await client.post(
                     self.webhook_url,
                     data=payload,
                     headers={
                         "Authorization": f"Basic {self.api_key_base64}",
                     },
                 )
-                r.raise_for_status()
-        except Exception as e:
-            log.exception("Unknown send_webhook_event error: %s", e)
+                res.raise_for_status()
+        except Exception as exc:
+            log.exception("Unknown send_webhook_event error: %s", exc)
 
     # async def subscribe(self):
     #     try:
@@ -79,15 +85,18 @@ class WebsocketEvents:
     async def start_consumer(self):
         """
         ChannelTalkingFinished
-            asterisk_id: string (optional) - The unique ID for the Asterisk instance that raised this event.
+            asterisk_id: string (optional) - The unique ID for the Asterisk
+                instance that raised this event.
             type: string - Indicates the type of this message.
             application: string - Name of the application receiving the event.
             timestamp: Date - Time at which this event was created.
             channel: [Channel|#Channel] - The channel on which talking completed.
-            duration: int - The length of time, in milliseconds, that talking was detected on the channel
+            duration: int - The length of time, in milliseconds,
+                that talking was detected on the channel
 
         ChannelTalkingStarted
-            asterisk_id: string (optional) - The unique ID for the Asterisk instance that raised this event.
+            asterisk_id: string (optional) - The unique ID for the Asterisk
+                instance that raised this event.
             type: string - Indicates the type of this message.
             application: string - Name of the application receiving the event.
             timestamp: Date - Time at which this event was created.
@@ -99,14 +108,15 @@ class WebsocketEvents:
                 channelvars: [object|#object] (optional) - Channel variables
                 connected: [CallerID|#CallerID]
                 creationtime: Date - Timestamp when channel was created
-                dialplan: [DialplanCEP|#DialplanCEP] - Current location in the dialplan
+                dialplan: [DialplanCEP|#DialplanCEP] - Current location
+                    in the dialplan
                 id: string - Unique identifier of the channel.
 
                 CallerID
                     name: string
                     number: string
                 DialplanCEP
-                    app_data: string - Parameter of current dialplan application
+                    app_data: string - Parameter of current dialplanapplication
                     app_name: string - Name of current dialplan application
                     context: string - Context in the dialplan
                     exten: string - Extension in the dialplan
@@ -188,13 +198,18 @@ class WebsocketEvents:
                     if message_json["type"] in self.webhook_events_denied:
                         continue
 
-                    log.info(f"Received: {message}")
+                    log.info("Received: %s", message)
 
                     if self.webhook_events_allow:
-                        if message_json["type"] not in self.webhook_events_allow:
+                        if (
+                            message_json["type"]
+                            not in self.webhook_events_allow
+                        ):
                             continue
 
-                    self.answer_last_message_time = str(datetime.datetime.now())
+                    self.answer_last_message_time = str(
+                        datetime.datetime.now()
+                    )
                     self.answer_last_message = message_json
 
                     await self.send_webhook_event(payload=message_json)
@@ -202,9 +217,9 @@ class WebsocketEvents:
         except asyncio.CancelledError:
             log.info("graceful stop webscoket client start_consumer")
             await websocket.close()
-        except Exception as e:
-            log.exception("Unknown start_consumer error: %s", e)
+        except Exception as exc:
+            log.exception("Unknown start_consumer error: %s", exc)
             self.connected = False
-            self.disconnected_reason = str(e)
+            self.disconnected_reason = str(exc)
             await asyncio.sleep(self.timeout)
             await self.start_consumer()

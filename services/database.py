@@ -2,6 +2,7 @@
 # Apache License Version 2.0
 
 from typing import Literal
+
 from schemas.config_schema import Config
 
 
@@ -38,16 +39,33 @@ class DatabaseStrategy:
         self.config = config
         self.cdr_start_field: Literal["calldate", "start"] = "start"
 
+    async def check_cdr_old(self):
+        """Check that Asterisk cdr have start column or not"""
+
+    async def get_cdr(self, start_date, end_date):
+        """Return calls history
+
+        Arguments:
+            start_date -- start date of calls
+            end_date -- end date of calls
+
+        Raises:
+            BusinessError: The start date cannot be greater than or equal to the end date
+
+        Returns:
+            cdr list of calls
+        """
+
 
 class SqliteStrategy(DatabaseStrategy):
     async def check_cdr_old(self):
         import aiosqlite
 
         check_column = f"SELECT COUNT(*) AS CNTREC FROM pragma_table_info('{self.config.db_table_cdr_name}') WHERE name='calldate'"
-        async with aiosqlite.connect(self.config.db_host) as db:
-            db.row_factory = aiosqlite.Row
+        async with aiosqlite.connect(self.config.db_host) as database:
+            database.row_factory = aiosqlite.Row
 
-            async with db.execute(check_column) as cursor:
+            async with database.execute(check_column) as cursor:
                 async for row in cursor:
                     self.cdr_start_field = "calldate"
                     return
@@ -57,13 +75,12 @@ class SqliteStrategy(DatabaseStrategy):
 
         # host==path "/var/lib/asterisk/astdb.sqlite3"
         result = []
-        async with aiosqlite.connect(self.config.db_host) as db:
-            db.row_factory = aiosqlite.Row
-            async with db.execute(
+        async with aiosqlite.connect(self.config.db_host) as database:
+            database.row_factory = aiosqlite.Row
+            async with database.execute(
                 f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
                 [start_date, end_date],
             ) as cursor:
-                rows = await cursor.fetchall()
                 async for row in cursor:
                     result.append(row)
         return result
@@ -86,9 +103,7 @@ class MysqlStrategy(DatabaseStrategy):
 
     async def check_cdr_old(self):
         conn, cur = await self.get_conn_cur()
-        check_column = (
-            f"SHOW COLUMNS FROM `{self.config.db_table_cdr_name}` LIKE 'calldate'"
-        )
+        check_column = f"SHOW COLUMNS FROM `{self.config.db_table_cdr_name}` LIKE 'calldate'"
         await cur.execute(check_column)
         rows = await cur.fetchall()
         await cur.close()

@@ -3,14 +3,12 @@
 
 import asyncio
 import logging
-from logging.handlers import RotatingFileHandler
 import sys
-from fastapi import FastAPI, HTTPException, Request
+from logging.handlers import RotatingFileHandler
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.docs import (
-    get_redoc_html,
-    get_swagger_ui_html,
-)
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 from starlette.status import (
     HTTP_400_BAD_REQUEST,
@@ -22,11 +20,10 @@ from starlette.status import (
 from const import VERSION
 from dependencies.db import get_db_connector
 from exceptions.exceptions import AuthError, BusinessError
+from routers.routers import router
 from schemas.config_schema import Config
 from services.ari import Ari
 from services.websocket import WebsocketEvents
-from routers.routers import router
-
 
 log_file_handler = RotatingFileHandler(
     filename="asterisk_agent.log",
@@ -72,9 +69,13 @@ app.add_middleware(
 )
 
 
-# swagger file from local instead CDN
 @app.get("/docs", include_in_schema=False)
 async def swagger_ui_html():
+    """Swagger ui docs from static (local) files not CDN
+
+    Returns:
+        HTML swagger ui
+    """
     return get_swagger_ui_html(
         openapi_url=app.openapi_url,
         title=app.title + " - Swagger UI",
@@ -85,6 +86,11 @@ async def swagger_ui_html():
 
 @app.get("/redoc", include_in_schema=False)
 async def redoc_html():
+    """Redoc ui docs from static (local) files not CDN
+
+    Returns:
+        HTML redoc ui
+    """
     return get_redoc_html(
         openapi_url=app.openapi_url,
         title=app.title + " - ReDoc",
@@ -103,7 +109,7 @@ app.include_router(router)
 
 
 @app.exception_handler(BusinessError)
-async def catch_exception_buisness(request: Request, exc: BusinessError):
+async def catch_exception_buisness(exc: BusinessError):
     raise HTTPException(
         status_code=HTTP_400_BAD_REQUEST,
         detail=exc.detail,
@@ -111,7 +117,7 @@ async def catch_exception_buisness(request: Request, exc: BusinessError):
 
 
 @app.exception_handler(AuthError)
-async def catch_exception_auth(request: Request, exc: AuthError):
+async def catch_exception_auth(exc: AuthError):
     raise HTTPException(
         status_code=HTTP_401_UNAUTHORIZED,
         detail=exc.detail,
@@ -119,37 +125,34 @@ async def catch_exception_auth(request: Request, exc: AuthError):
 
 
 @app.exception_handler(Exception)
-async def catch_exception_internal(request: Request, exc: Exception):
+async def catch_exception_internal():
     raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 async def producer_webhook(config: Config, timeout: int = 30) -> None:
     """Producer send events to cusomer webhook from config file"""
-    try:
-        websocket_url = f"{config.ari_wss}".rstrip("/")
-        webhook_url = f"{config.webhook_url}"
-        ari_url = f"{config.ari_url}"
+    websocket_url = f"{config.ari_wss}".rstrip("/")
+    webhook_url = f"{config.webhook_url}"
+    ari_url = f"{config.ari_url}"
 
-        websocket_client = WebsocketEvents(
-            ari_url=ari_url,
-            websocket_url=websocket_url,
-            webhook_url=webhook_url,
-            timeout=timeout,
-            api_key=config.api_key,
-            api_key_base64=config.api_key_base64,
-            webhook_events_denied=config.webhook_events_denied,
-            webhook_events_allow=config.webhook_events_allow,
-        )
-        app.state.websocket_client = websocket_client
+    websocket_client = WebsocketEvents(
+        ari_url=ari_url,
+        websocket_url=websocket_url,
+        webhook_url=webhook_url,
+        timeout=timeout,
+        api_key=config.api_key,
+        api_key_base64=config.api_key_base64,
+        webhook_events_denied=config.webhook_events_denied,
+        webhook_events_allow=config.webhook_events_allow,
+    )
+    app.state.websocket_client = websocket_client
 
-        await websocket_client.start_consumer()
-    except Exception as e:
-        log.exception("Unknown producer_webhook error: %s", e)
+    await websocket_client.start_consumer()
 
 
 @app.on_event("startup")
 async def start() -> None:
-    """Create backgrond task"""
+    """Create backgrond task and init app"""
     # read and validate config file
     config = Config()  # type: ignore
     ari = Ari(api_key=config.api_key, ari_url=str(config.ari_url))
@@ -161,8 +164,8 @@ async def start() -> None:
     log.info("start check cdr version...")
     try:
         await app.state.connector_database.check_cdr_old()
-    except Exception as e:
-        log.exception("Unknown check_cdr_old error: %s", e)
+    except Exception as exc:
+        log.exception("Unknown check_cdr_old error: %s", exc)
     log.info("end check cdr version")
 
     app.state.background_tasks = [
@@ -172,5 +175,5 @@ async def start() -> None:
 
 @app.on_event("shutdown")
 async def shutdown():
-    for t in app.state.background_tasks:
-        t.cancel()
+    for task in app.state.background_tasks:
+        task.cancel()

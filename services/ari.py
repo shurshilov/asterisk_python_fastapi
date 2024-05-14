@@ -1,11 +1,17 @@
+# Copyright 2024 Artem Shurshilov
+# Apache License Version 2.0
+
 import logging
 import posixpath
+
 import httpx
 
 log = logging.getLogger("asterisk_agent")
 
 
 class Ari:
+    """ARI (Asterisk REST FULL INTERFACE)"""
+
     def __init__(
         self,
         ari_url: str,
@@ -36,15 +42,19 @@ class Ari:
         async with httpx.AsyncClient() as client:
             path = f"endpoints?api_key={self.api_key}"
 
-            r = await client.get(f"{posixpath.join(self.ari_url, path)}")
-            r.raise_for_status()
-            return r.text
+            response = await client.get(
+                f"{posixpath.join(self.ari_url, path)}"
+            )
+            response.raise_for_status()
+            return response.text
 
-    async def call_recording(self, id: str):
+    async def call_recording(self, filename: str):
         """return ARI recorgings"""
         async with httpx.AsyncClient() as client:
-            path = f"/recordings/stored/{id}/file?api_key={self.api_key}"
+            path = f"/recordings/stored/{filename}/file?api_key={self.api_key}"
 
-            r = await client.get(f"{posixpath.join(self.ari_url, path)}")
-            r.raise_for_status()
-            return r.content
+            response = await client.get(
+                f"{posixpath.join(self.ari_url, path)}"
+            )
+            response.raise_for_status()
+            return response.content
