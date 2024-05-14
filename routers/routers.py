@@ -62,7 +62,12 @@ async def checkup(req: Request):
         end_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         res = await connector_database.get_cdr(start_date, end_date)
 
-        result["info"]["checkup_db"]["history_3_last_days"] = str(res)
+        result["info"]["checkup_db"]["history_3_last_days"] = (
+            str(res[0]) if len(res) else str(res)
+        )
+        result["info"]["checkup_db"][
+            "cdr_start_field"
+        ] = connector_database.cdr_start_field
     except Exception as e:
         result["info"]["checkup_db"]["error"] = str(e)
         result["status"]["checkup_db"] = "error"

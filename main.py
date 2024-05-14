@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from const import VERSION
+from dependencies.db import get_db_connector
 from schemas.config_schema import Config
 from services.ari import Ari
 from services.websocket import WebsocketEvents
@@ -76,6 +77,8 @@ async def start() -> None:
     ari = Ari(api_key=config.api_key, ari_url=str(config.ari_url))
     app.state.config = config
     app.state.ari = ari
+    connector_database = get_db_connector(config)
+    await connector_database.check_cdr_old()
 
     app.state.background_tasks = [
         asyncio.create_task(producer_webhook(config)),

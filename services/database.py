@@ -1,6 +1,7 @@
 # Copyright 2024 Artem Shurshilov
 # Apache License Version 2.0
 
+from typing import Literal
 from schemas.config_schema import Config
 
 
@@ -35,27 +36,41 @@ class DatabaseStrategy:
 
     def __init__(self, config: Config) -> None:
         self.config = config
+        self.cdr_start_field: Literal["calldate", "start"] = "start"
 
 
 class SqliteStrategy(DatabaseStrategy):
+    async def check_cdr_old(self):
+        import aiosqlite
+
+        check_column = f"SELECT COUNT(*) AS CNTREC FROM pragma_table_info('{self.config.db_table_cdr_name}') WHERE name='calldate'"
+        async with aiosqlite.connect(self.config.db_host) as db:
+            db.row_factory = aiosqlite.Row
+
+            async with db.execute(check_column) as cursor:
+                async for row in cursor:
+                    self.cdr_start_field = "calldate"
+                    return
+
     async def get_cdr(self, start_date, end_date):
         import aiosqlite
 
         # host==path "/var/lib/asterisk/astdb.sqlite3"
+        result = []
         async with aiosqlite.connect(self.config.db_host) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute(
-                f"SELECT * FROM {self.config.db_table_cdr_name} where calldate >= %s and calldate <= %s limit 100000;",
+                f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
                 [start_date, end_date],
             ) as cursor:
                 rows = await cursor.fetchall()
-                return rows
-
+                async for row in cursor:
+                    result.append(row)
+        return result
 
 class MysqlStrategy(DatabaseStrategy):
-    async def get_cdr(self, start_date, end_date):
+    async def get_conn_cur(self):
         import aiomysql
-
         conn = await aiomysql.connect(
             host=self.config.db_host,
             port=self.config.db_port,
@@ -65,8 +80,25 @@ class MysqlStrategy(DatabaseStrategy):
         )
 
         cur = await conn.cursor()
+        return conn, cur
+
+    async def check_cdr_old(self):
+        conn, cur = await self.get_conn_cur()
+        check_column = (
+            f"SHOW COLUMNS FROM `{self.config.db_table_cdr_name}` LIKE 'calldate'"
+        )
+        await cur.execute(check_column)
+        rows = await cur.fetchall()
+        await cur.close()
+        conn.close()
+        if len(rows):
+            self.cdr_start_field = "calldate"
+            return
+
+    async def get_cdr(self, start_date, end_date):
+        conn, cur = await self.get_conn_cur()
         await cur.execute(
-            f"SELECT * FROM {self.config.db_table_cdr_name} where calldate >= %s and calldate <= %s limit 100000;",
+            f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
             (start_date, end_date),
         )
         rows = await cur.fetchall()
@@ -76,14 +108,32 @@ class MysqlStrategy(DatabaseStrategy):
 
 
 class PostgresqlStrategy(DatabaseStrategy):
-    async def get_cdr(self, start_date, end_date):
+    async def get_conn_cur(self):
         import aiopg
 
         dsn = f"dbname={self.config.db_database} user={self.config.db_user} password={self.config.db_password} host={self.config.db_host} port={self.config.db_port}"
         conn = await aiopg.connect(dsn)
         cur = await conn.cursor()
+        return conn, cur
+
+    async def check_cdr_old(self):
+        conn, cur = await self.get_conn_cur()
         await cur.execute(
-            f"SELECT * FROM {self.config.db_table_cdr_name} where calldate >= %s and calldate <= %s limit 100000;",
+            f"SELECT column_name 
+              FROM information_schema.columns 
+              WHERE table_name='{self.config.db_table_cdr_name}' and column_name='calldate'"
+        )
+
+        rows = await cur.fetchall()
+        await conn.close()
+        if len(rows):
+            self.cdr_start_field = "calldate"
+            return
+
+    async def get_cdr(self, start_date, end_date):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute(
+            f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
             (start_date, end_date),
         )
         rows = await cur.fetchall()
