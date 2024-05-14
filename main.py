@@ -12,10 +12,15 @@ from fastapi.openapi.docs import (
     get_swagger_ui_html,
 )
 from fastapi.staticfiles import StaticFiles
-from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
+from starlette.status import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_401_UNAUTHORIZED,
+    HTTP_500_INTERNAL_SERVER_ERROR,
+)
 
 from const import VERSION
 from dependencies.db import get_db_connector
+from exceptions.exceptions import AuthError, BusinessError
 from schemas.config_schema import Config
 from services.ari import Ari
 from services.websocket import WebsocketEvents
@@ -54,6 +59,7 @@ app.add_middleware(
 )
 
 
+# swagger file from local instead CDN
 @app.get("/docs", include_in_schema=False)
 async def swagger_ui_html():
     return get_swagger_ui_html(
@@ -83,8 +89,24 @@ app.mount(
 app.include_router(router)
 
 
+@app.exception_handler(BusinessError)
+async def catch_exception_buisness(request: Request, exc: BusinessError):
+    raise HTTPException(
+        status_code=HTTP_400_BAD_REQUEST,
+        detail=exc.detail,
+    )
+
+
+@app.exception_handler(AuthError)
+async def catch_exception_auth(request: Request, exc: AuthError):
+    raise HTTPException(
+        status_code=HTTP_401_UNAUTHORIZED,
+        detail=exc.detail,
+    )
+
+
 @app.exception_handler(Exception)
-async def catch_exception_handler(request: Request, exc: Exception):
+async def catch_exception_internal(request: Request, exc: Exception):
     raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR)
 
 

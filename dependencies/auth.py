@@ -2,10 +2,10 @@
 # Apache License Version 2.0
 
 from typing import Annotated
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from starlette.status import HTTP_401_UNAUTHORIZED
 
+from exceptions.exceptions import AuthError
 from schemas.config_schema import Config
 
 security = HTTPBasic()
@@ -20,7 +20,4 @@ async def verify_basic_auth(
         credentials.username != config.ari_login
         or credentials.password != config.ari_password
     ):
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
+        raise AuthError(detail="Not authenticated")

@@ -5,13 +5,14 @@ import datetime
 import json
 import logging
 import posixpath
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 import httpx
 from pydantic import AwareDatetime
 
 from dependencies.auth import verify_basic_auth
 from const import VERSION
+from exceptions.exceptions import BusinessError
 from schemas.config_schema import Config
 from services.ari import Ari
 from services.database import MysqlStrategy, PostgresqlStrategy, SqliteStrategy
@@ -66,10 +67,10 @@ async def checkup(req: Request):
             "%Y-%m-%d %H:%M:%S"
         )
         end_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        res = await connector_database.get_cdr(start_date, end_date)
+        rows = await connector_database.get_cdr(start_date, end_date)
 
-        result["info"]["checkup_db"]["history_3_last_days"] = (
-            str(res[0]) if len(res) else str(res)
+        result["info"]["checkup_db"]["history_last_call"] = (
+            rows[0] if len(rows) else str(rows)
         )
     except Exception as e:
         result["info"]["checkup_db"]["error"] = str(e)
@@ -100,6 +101,8 @@ async def checkup(req: Request):
             result["info"][
                 "checkup_webhook_url"
             ] = f"status code {checkup_webhook_url.status_code}"
+            if checkup_webhook_url.status_code != 200:
+                result["status"]["checkup_webhook_url"] = "error"
     except Exception as e:
         result["info"]["checkup_webhook_url"] = str(e)
         result["status"]["checkup_webhook_url"] = "error"
@@ -135,9 +138,8 @@ async def calls_history(
     log.info("HISTORY")
 
     if start_date >= end_date:
-        raise HTTPException(
-            status_code=400,
-            detail="The start date cannot be greater than or equal to the end date",
+        raise BusinessError(
+            "The start date cannot be greater than or equal to the end date"
         )
 
     connector_database: PostgresqlStrategy | MysqlStrategy | SqliteStrategy = (
