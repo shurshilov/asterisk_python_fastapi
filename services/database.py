@@ -73,7 +73,7 @@ class MysqlStrategy(DatabaseStrategy):
     async def get_conn_cur(self):
         import aiomysql
 
-        conn = await aiomysql.connect(
+        conn: aiomysql.Connection = await aiomysql.connect(
             host=self.config.db_host,
             port=self.config.db_port,
             user=self.config.db_user,
@@ -81,7 +81,7 @@ class MysqlStrategy(DatabaseStrategy):
             db=self.config.db_database,
         )
 
-        cur = await conn.cursor()
+        cur: aiomysql.Cursor = await conn.cursor(aiomysql.DictCursor)
         return conn, cur
 
     async def check_cdr_old(self):
