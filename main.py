@@ -7,6 +7,11 @@ from logging.handlers import RotatingFileHandler
 import sys
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import (
+    get_redoc_html,
+    get_swagger_ui_html,
+)
+from fastapi.staticfiles import StaticFiles
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from const import VERSION
@@ -37,6 +42,8 @@ app = FastAPI(
     title="Asterisk Agent",
     description="Light web server for calls history and webhook feature",
     version=VERSION,
+    docs_url=None,
+    redoc_url=None,
 )
 app.add_middleware(
     CORSMiddleware,
@@ -45,6 +52,34 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/docs", include_in_schema=False)
+async def swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+        swagger_js_url="/static/swagger-ui-bundle.js",
+        swagger_css_url="/static/swagger-ui.css",
+    )
+
+
+@app.get("/redoc", include_in_schema=False)
+async def redoc_html():
+    return get_redoc_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - ReDoc",
+        redoc_js_url="/static/redoc.standalone.js",
+    )
+
+
+# статичная папка для картинок документации
+app.mount(
+    "/static",
+    StaticFiles(directory="static"),
+    name="static",
+)
+
 app.include_router(router)
 
 

@@ -4,8 +4,8 @@
 Source code [Github](https://github.com/shurshilov/odoo)
 
 
-<img src="images/fastapi_logo.png" alt="drawing" width="200"/>
-<img src="images/asterisk_logo.jpeg" alt="drawing" width="200"/>
+<img src="static/images/fastapi_logo.png" alt="drawing" width="200"/>
+<img src="static/images/asterisk_logo.jpeg" alt="drawing" width="200"/>
 
 
 ## What is this program for??

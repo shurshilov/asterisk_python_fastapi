@@ -35,6 +35,7 @@ class Ari:
         """
         async with httpx.AsyncClient() as client:
             path = f"endpoints?api_key={self.api_key}"
+
             r = await client.get(f"{posixpath.join(self.ari_url, path)}")
             r.raise_for_status()
             return r.text
@@ -43,6 +44,7 @@ class Ari:
         """return ARI recorgings"""
         async with httpx.AsyncClient() as client:
             path = f"/recordings/stored/{id}/file?api_key={self.api_key}"
+
             r = await client.get(f"{posixpath.join(self.ari_url, path)}")
             r.raise_for_status()
             return r.content
