@@ -15,6 +15,7 @@ from dependencies.db import get_db_connector
 from const import VERSION
 from schemas.config_schema import Config
 from services.ari import Ari
+from services.database import MysqlStrategy, PostgresqlStrategy, SqliteStrategy
 
 log = logging.getLogger("asterisk_agent")
 router = APIRouter(tags=["API"], dependencies=[Depends(verify_basic_auth)])
@@ -54,7 +55,13 @@ async def checkup(req: Request):
     try:
         result["info"]["checkup_db"]["dialect"] = config.db_dialect
 
-        connector_database = get_db_connector(config)
+        connector_database: PostgresqlStrategy | MysqlStrategy | SqliteStrategy = (
+            req.app.state.connector_database
+        )
+
+        result["info"]["checkup_db"][
+            "cdr_start_field"
+        ] = connector_database.cdr_start_field
 
         start_date = (datetime.datetime.now() - datetime.timedelta(days=3)).strftime(
             "%Y-%m-%d %H:%M:%S"
@@ -65,9 +72,6 @@ async def checkup(req: Request):
         result["info"]["checkup_db"]["history_3_last_days"] = (
             str(res[0]) if len(res) else str(res)
         )
-        result["info"]["checkup_db"][
-            "cdr_start_field"
-        ] = connector_database.cdr_start_field
     except Exception as e:
         result["info"]["checkup_db"]["error"] = str(e)
         result["status"]["checkup_db"] = "error"
@@ -137,8 +141,9 @@ async def calls_history(
                 detail="The start date cannot be greater than or equal to the end date",
             )
 
-        config: Config = req.app.state.config
-        connector_database = get_db_connector(config)
+        connector_database: PostgresqlStrategy | MysqlStrategy | SqliteStrategy = (
+            req.app.state.connector_database
+        )
 
         return await connector_database.get_cdr(start_date, end_date)
 

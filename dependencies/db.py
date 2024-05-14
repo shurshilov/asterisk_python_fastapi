@@ -5,7 +5,9 @@ from schemas.config_schema import Config
 from services.database import MysqlStrategy, PostgresqlStrategy, SqliteStrategy
 
 
-def get_db_connector(config: Config):
+def get_db_connector(
+    config: Config,
+) -> PostgresqlStrategy | MysqlStrategy | SqliteStrategy:
     if config.db_dialect == "sqlite":
         connector_database = SqliteStrategy(config)
     if config.db_dialect == "mysql":
