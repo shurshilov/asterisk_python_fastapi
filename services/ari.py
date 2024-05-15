@@ -3,6 +3,7 @@
 
 import logging
 import posixpath
+import urllib.parse
 
 import httpx
 
@@ -40,10 +41,11 @@ class Ari:
             ]
         """
         async with httpx.AsyncClient() as client:
-            path = f"endpoints?api_key={self.api_key}"
+            path = "endpoints"
 
             response = await client.get(
-                f"{posixpath.join(self.ari_url, path)}"
+                f"{posixpath.join(self.ari_url, path)}",
+                params={"api_key": self.api_key},
             )
             response.raise_for_status()
             return response.text
@@ -51,10 +53,11 @@ class Ari:
     async def call_recording(self, filename: str):
         """return ARI recorgings"""
         async with httpx.AsyncClient() as client:
-            path = f"/recordings/stored/{filename}/file?api_key={self.api_key}"
+            path = urllib.parse.quote(f"/recordings/stored/{filename}/file")
 
             response = await client.get(
-                f"{posixpath.join(self.ari_url, path)}"
+                f"{posixpath.join(self.ari_url, path)}",
+                params={"api_key": self.api_key},
             )
             response.raise_for_status()
             return response.content
