@@ -4,6 +4,7 @@
 import datetime
 import json
 import logging
+import os
 import posixpath
 import urllib.parse
 
@@ -196,6 +197,12 @@ async def call_recording(req: Request, filename: str):
     config: Config = req.app.state.config
     path_file = f"{posixpath.join(config.path_recordings, filename)}"
     log.info("Path recordings: %s", path_file)
+
+    for root, dirnames, filenames in os.walk(config.path_recordings):
+        for file_name in filenames:
+            if file_name == filename:
+                path_file = os.path.join(root, filename)
+                break
 
     async with aiofiles.open(path_file, "rb") as file:
         recording = await file.read()
