@@ -195,7 +195,7 @@ async def call_recording(req: Request, filename: str):
     log.info("RECORDING")
 
     config: Config = req.app.state.config
-    path_file = f"{posixpath.join(config.path_recordings, filename)}"
+    path_file = ""
     log.info("Path recordings: %s", path_file)
 
     for root, dirnames, filenames in os.walk(config.path_recordings):
@@ -203,6 +203,8 @@ async def call_recording(req: Request, filename: str):
             if file_name == filename:
                 path_file = os.path.join(root, filename)
                 break
+    if not path_file:
+        raise BusinessError("File not found")
 
     async with aiofiles.open(path_file, "rb") as file:
         recording = await file.read()
