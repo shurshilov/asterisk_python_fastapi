@@ -54,10 +54,12 @@ class Ari:
         """return ARI recorgings"""
         async with httpx.AsyncClient() as client:
             path = urllib.parse.quote(f"/recordings/stored/{filename}/file")
+            log.info("Start call recording %s", path)
 
             response = await client.get(
                 f"{posixpath.join(self.ari_url, path)}",
                 params={"api_key": self.api_key},
             )
+            log.info("End call recording %s", response)
             response.raise_for_status()
             return response.content
