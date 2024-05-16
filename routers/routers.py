@@ -177,12 +177,12 @@ async def numbers(req: Request):
     return json.loads(res)
 
 
-@router.get("/api/call/recording")
-async def call_recording(req: Request, id: str):
+@router.post("/api/call/recording")
+async def call_recording(req: Request, filename: str):
     """Return binary record of call
 
     Arguments:
-        id -- filename
+        filename -- filename record
 
     Returns:
         binary record
@@ -190,4 +190,4 @@ async def call_recording(req: Request, id: str):
     log.info("RECORDING")
 
     ari: Ari = req.app.state.ari
-    return await ari.call_recording(id)
+    return await ari.call_recording(filename)
