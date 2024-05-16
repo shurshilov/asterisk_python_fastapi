@@ -46,7 +46,7 @@ repos:
         name: Black Python code formatting
         language: python
         types: [python]
-        args: ["--line-length=79"]
+        args: ["--line-length=100"]
         files: \.py$
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
@@ -56,12 +56,12 @@ repos:
         args:
           - --settings=.
         exclude: /__init__\.py$
-  # - repo: https://github.com/PyCQA/pylint
-  #   rev: v2.17.4
-  #   hooks:
-  #     - id: pylint
-  #       args:
-  #       - --disable=import-error, missing-module-docstring, broad-exception-caught, missing-function-docstring, missing-class-docstring, import-outside-toplevel,line-too-long,unused-variable,too-many-arguments,too-many-instance-attributes,no-name-in-module,redefined-builtin,invalid-name
+  - repo: https://github.com/PyCQA/pylint
+    rev: v2.17.4
+    hooks:
+      - id: pylint
+        args:
+        - --disable=import-error, missing-module-docstring, broad-exception-caught, missing-function-docstring, missing-class-docstring, import-outside-toplevel,line-too-long,unused-variable,too-many-arguments,too-many-instance-attributes,no-name-in-module,redefined-builtin,invalid-name
 
 # install it with pip
 # python -m pip install pre-commit

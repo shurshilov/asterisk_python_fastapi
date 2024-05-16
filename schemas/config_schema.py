@@ -4,26 +4,22 @@
 import base64
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, UrlConstraints
+from pydantic import UrlConstraints
 from pydantic_core import Url
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-HttpURL = Annotated[
-    Url, UrlConstraints(allowed_schemes=["http", "https"], max_length=2048)
-]
-WsURL = Annotated[
-    Url, UrlConstraints(allowed_schemes=["ws", "wss"], max_length=2048)
-]
+HttpURL = Annotated[Url, UrlConstraints(allowed_schemes=["http", "https"], max_length=2048)]
+WsURL = Annotated[Url, UrlConstraints(allowed_schemes=["ws", "wss"], max_length=2048)]
 
 
 class Config(BaseSettings):
     """Read from disk and validate .env conf file"""
 
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
     # cdr_path = "/var/log/asterisk/cdr-csv"
     # debug_level: Literal["info", "debug", "error"]
+    path_recordings: str
+    # webhook
     webhook_url: HttpURL
     webhook_events_denied: list[str]
     webhook_events_allow: list[str]
@@ -54,7 +50,3 @@ class Config(BaseSettings):
         api_key_bytes = base64.b64encode(bytes(self.api_key, "utf-8"))
         api_key_base64 = api_key_bytes.decode("utf-8")
         return api_key_base64
-
-
-class Filename(BaseModel):
-    filename: str

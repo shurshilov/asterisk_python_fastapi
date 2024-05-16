@@ -5,16 +5,18 @@ import datetime
 import json
 import logging
 import posixpath
+import urllib.parse
 
+import aiofiles
 import httpx
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import AwareDatetime
 
 from const import VERSION
 from dependencies.auth import verify_basic_auth
 from exceptions.exceptions import BusinessError
-from schemas.config_schema import Config, Filename
+from schemas.config_schema import Config
 from services.ari import Ari
 from services.database import MysqlStrategy, PostgresqlStrategy, SqliteStrategy
 
@@ -56,23 +58,19 @@ async def checkup(req: Request):
     try:
         result["info"]["checkup_db"]["dialect"] = config.db_dialect
 
-        connector_database: (
-            PostgresqlStrategy | MysqlStrategy | SqliteStrategy
-        ) = req.app.state.connector_database
+        connector_database: PostgresqlStrategy | MysqlStrategy | SqliteStrategy = (
+            req.app.state.connector_database
+        )
 
-        result["info"]["checkup_db"][
-            "cdr_start_field"
-        ] = connector_database.cdr_start_field
+        result["info"]["checkup_db"]["cdr_start_field"] = connector_database.cdr_start_field
 
-        start_date = (
-            datetime.datetime.now() - datetime.timedelta(days=3)
-        ).strftime("%Y-%m-%d %H:%M:%S")
+        start_date = (datetime.datetime.now() - datetime.timedelta(days=3)).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         end_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         rows = await connector_database.get_cdr(start_date, end_date)
 
-        result["info"]["checkup_db"]["history_last_call"] = (
-            rows[0] if len(rows) else str(rows)
-        )
+        result["info"]["checkup_db"]["history_last_call"] = rows[0] if len(rows) else str(rows)
     except Exception as exc:
         result["info"]["checkup_db"]["error"] = str(exc)
         result["status"]["checkup_db"] = "error"
@@ -99,9 +97,7 @@ async def checkup(req: Request):
 
             checkup_webhook_url = await client.get(url)
 
-            result["info"][
-                "checkup_webhook_url"
-            ] = f"status code {checkup_webhook_url.status_code}"
+            result["info"]["checkup_webhook_url"] = f"status code {checkup_webhook_url.status_code}"
             if checkup_webhook_url.status_code != 200:
                 result["status"]["checkup_webhook_url"] = "error"
     except Exception as exc:
@@ -133,9 +129,7 @@ async def checkup(req: Request):
 
 
 @router.get("/api/calls/hisroty/")
-async def calls_history(
-    req: Request, start_date: AwareDatetime, end_date: AwareDatetime
-):
+async def calls_history(req: Request, start_date: AwareDatetime, end_date: AwareDatetime):
     """Return calls history
 
     Arguments:
@@ -151,9 +145,7 @@ async def calls_history(
     log.info("HISTORY")
 
     if start_date >= end_date:
-        raise BusinessError(
-            "The start date cannot be greater than or equal to the end date"
-        )
+        raise BusinessError("The start date cannot be greater than or equal to the end date")
 
     connector_database: PostgresqlStrategy | MysqlStrategy | SqliteStrategy = (
         req.app.state.connector_database
@@ -177,17 +169,41 @@ async def numbers(req: Request):
     return json.loads(res)
 
 
-@router.post("/api/call/recording")
-async def call_recording(req: Request, payload: Filename):
-    """Return binary record of call
-
+@router.get("/api/call/recording/ari")
+async def call_recording_ari(req: Request, filename: str):
+    """Return binary record of call, from ARI
     Arguments:
-        filename -- filename record
+        filename -- filename
+    Returns:
+        binary record
+    """
+    log.info("RECORDING ARI")
 
+    ari: Ari = req.app.state.ari
+    return await ari.call_recording(filename)
+
+
+@router.get("/api/call/recording")
+async def call_recording(req: Request, filename: str):
+    """Return binary record of call, from directly server folder
+    Arguments:
+        filename -- filename
     Returns:
         binary record
     """
     log.info("RECORDING")
 
-    ari: Ari = req.app.state.ari
-    return await ari.call_recording(payload.filename)
+    config: Config = req.app.state.config
+    path_file = f"{posixpath.join(config.path_recordings, filename)}"
+    log.info("Path recordings: %s", path_file)
+
+    async with aiofiles.open(path_file, "rb") as file:
+        recording = await file.read()
+
+    return Response(
+        headers={
+            "Content-Disposition": f"Attachment" f""";filename={urllib.parse.quote(filename)}"""
+        },
+        media_type="application/octet-stream;charset=utf-8",
+        content=recording,
+    )
