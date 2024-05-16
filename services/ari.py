@@ -47,7 +47,6 @@ class Ari:
                 f"{posixpath.join(self.ari_url, path)}",
                 params={"api_key": self.api_key},
             )
-            response.raise_for_status()
             return response.text
 
     async def call_recording(self, filename: str):
@@ -61,5 +60,4 @@ class Ari:
                 params={"api_key": self.api_key},
             )
             log.info("End call recording %s", response)
-            response.raise_for_status()
             return response.content
