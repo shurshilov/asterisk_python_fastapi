@@ -14,7 +14,7 @@ from pydantic import AwareDatetime
 from const import VERSION
 from dependencies.auth import verify_basic_auth
 from exceptions.exceptions import BusinessError
-from schemas.config_schema import Config
+from schemas.config_schema import Config, Filename
 from services.ari import Ari
 from services.database import MysqlStrategy, PostgresqlStrategy, SqliteStrategy
 
@@ -178,7 +178,7 @@ async def numbers(req: Request):
 
 
 @router.post("/api/call/recording")
-async def call_recording(req: Request, filename: str):
+async def call_recording(req: Request, payload: Filename):
     """Return binary record of call
 
     Arguments:
@@ -190,4 +190,4 @@ async def call_recording(req: Request, filename: str):
     log.info("RECORDING")
 
     ari: Ari = req.app.state.ari
-    return await ari.call_recording(filename)
+    return await ari.call_recording(payload.filename)

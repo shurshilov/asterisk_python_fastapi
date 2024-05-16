@@ -4,7 +4,7 @@
 import base64
 from typing import Annotated, Literal
 
-from pydantic import UrlConstraints
+from pydantic import BaseModel, UrlConstraints
 from pydantic_core import Url
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -54,3 +54,7 @@ class Config(BaseSettings):
         api_key_bytes = base64.b64encode(bytes(self.api_key, "utf-8"))
         api_key_base64 = api_key_bytes.decode("utf-8")
         return api_key_base64
+
+
+class Filename(BaseModel):
+    filename: str
