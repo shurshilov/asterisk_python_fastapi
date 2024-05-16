@@ -35,7 +35,7 @@ log_file_handler = RotatingFileHandler(
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S",
-    level="INFO",
+    level="DEBUG",
     handlers=[log_file_handler, logging.StreamHandler(sys.stdout)],
 )
 
