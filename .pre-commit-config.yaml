@@ -4,18 +4,18 @@ default_language_version:
   python: python3
   node: "16.17.0"
 repos:
-  - repo: https://github.com/myint/autoflake
-    rev: v2.3.1
-    hooks:
-      - id: autoflake
-        args:
-          - --expand-star-imports
-          - --ignore-init-module-imports
-          - --in-place
-          - --remove-all-unused-imports
-          - --remove-duplicate-keys
-          - --remove-unused-variables
-        exclude: /__init__\.py$
+  # - repo: https://github.com/myint/autoflake
+  #   rev: v2.3.1
+  #   hooks:
+  #     - id: autoflake
+  #       args:
+  #         - --expand-star-imports
+  #         - --ignore-init-module-imports
+  #         - --in-place
+  #         - --remove-all-unused-imports
+  #         - --remove-duplicate-keys
+  #         - --remove-unused-variables
+  #       exclude: /__init__\.py$
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:

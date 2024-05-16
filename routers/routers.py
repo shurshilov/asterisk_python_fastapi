@@ -203,6 +203,7 @@ async def call_recording(req: Request, filename: str):
             if file_name == filename:
                 path_file = os.path.join(root, filename)
                 break
+
     if not path_file:
         raise BusinessError("File not found")
 
