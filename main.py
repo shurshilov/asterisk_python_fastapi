@@ -110,6 +110,7 @@ app.include_router(router)
 
 @app.exception_handler(BusinessError)
 async def catch_exception_buisness(exc: BusinessError):
+    log.info("Business error %s", exc)
     raise HTTPException(
         status_code=HTTP_400_BAD_REQUEST,
         detail=exc.detail,
@@ -118,6 +119,7 @@ async def catch_exception_buisness(exc: BusinessError):
 
 @app.exception_handler(AuthError)
 async def catch_exception_auth(exc: AuthError):
+    log.info("Auth error %s", exc)
     raise HTTPException(
         status_code=HTTP_401_UNAUTHORIZED,
         detail=exc.detail,
@@ -125,7 +127,8 @@ async def catch_exception_auth(exc: AuthError):
 
 
 @app.exception_handler(Exception)
-async def catch_exception_internal():
+async def catch_exception_internal(exc: Exception):
+    log.exception("Internal server error %s", exc)
     raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR)
 
 
