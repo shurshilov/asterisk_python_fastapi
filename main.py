@@ -6,7 +6,7 @@ import logging
 import sys
 from logging.handlers import RotatingFileHandler
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
@@ -109,7 +109,7 @@ app.include_router(router)
 
 
 @app.exception_handler(BusinessError)
-async def catch_exception_buisness(exc: BusinessError):
+async def catch_exception_buisness(req: Request, exc: BusinessError):
     log.info("Business error %s", exc)
     raise HTTPException(
         status_code=HTTP_400_BAD_REQUEST,
@@ -118,7 +118,7 @@ async def catch_exception_buisness(exc: BusinessError):
 
 
 @app.exception_handler(AuthError)
-async def catch_exception_auth(exc: AuthError):
+async def catch_exception_auth(req: Request, exc: AuthError):
     log.info("Auth error %s", exc)
     raise HTTPException(
         status_code=HTTP_401_UNAUTHORIZED,
@@ -127,7 +127,7 @@ async def catch_exception_auth(exc: AuthError):
 
 
 @app.exception_handler(Exception)
-async def catch_exception_internal(exc: Exception):
+async def catch_exception_internal(req: Request, exc: Exception):
     log.exception("Internal server error %s", exc)
     raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR)
 
