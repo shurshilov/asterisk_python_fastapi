@@ -43,7 +43,9 @@ class WebsocketEvents:
         super().__init__()
         self.ari_url = ari_url
         self.api_key = api_key
-        self.websocket_url = f"{websocket_url}?api_key={api_key}&app=AsteriskAgentPython&subscribeAll=true"
+        self.websocket_url = (
+            f"{websocket_url}?api_key={api_key}&app=AsteriskAgentPython&subscribeAll=true"
+        )
         self.webhook_url = webhook_url
         self.timeout = timeout
         self.api_key_base64 = api_key_base64
@@ -201,18 +203,13 @@ class WebsocketEvents:
                     log.info("Received: %s", message)
 
                     if self.webhook_events_allow:
-                        if (
-                            message_json["type"]
-                            not in self.webhook_events_allow
-                        ):
+                        if message_json["type"] not in self.webhook_events_allow:
                             continue
 
-                    self.answer_last_message_time = str(
-                        datetime.datetime.now()
-                    )
+                    self.answer_last_message_time = str(datetime.datetime.now())
                     self.answer_last_message = message_json
 
-                    await self.send_webhook_event(payload=message_json)
+                    await self.send_webhook_event(payload=message)
 
         except asyncio.CancelledError:
             log.info("graceful stop webscoket client start_consumer")
