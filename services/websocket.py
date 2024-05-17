@@ -62,7 +62,7 @@ class WebsocketEvents:
             async with httpx.AsyncClient() as client:
                 res = await client.post(
                     self.webhook_url,
-                    data=payload,
+                    json=payload,
                     headers={
                         "Authorization": f"Basic {self.api_key_base64}",
                     },
@@ -209,7 +209,7 @@ class WebsocketEvents:
                     self.answer_last_message_time = str(datetime.datetime.now())
                     self.answer_last_message = message_json
 
-                    await self.send_webhook_event(payload=message)
+                    await self.send_webhook_event(payload=message_json)
 
         except asyncio.CancelledError:
             log.info("graceful stop webscoket client start_consumer")
