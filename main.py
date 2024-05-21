@@ -39,7 +39,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S",
     level="DEBUG",
-    handlers=[log_file_handler],
+    handlers=[log_file_handler, logging.StreamHandler(sys.stdout)],
 )
 
 log = logging.getLogger("asterisk_agent")

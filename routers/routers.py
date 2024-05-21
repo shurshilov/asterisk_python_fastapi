@@ -38,18 +38,21 @@ async def checkup(req: Request):
     """
     log.info("CHECKUP")
     config: Config = req.app.state.config
+
     result = {
         "vesrion": VERSION,
         "webhook_url": f"{config.webhook_url}",
         "status": {
             "checkup_db": "ok",
             "checkup_ari": "ok",
+            "checkup_ami": "ok",
             "checkup_webhook_url": "ok",
             "checkup_websocket": "ok",
         },
         "info": {
             "checkup_db": {},
             "checkup_ari": {},
+            "checkup_ami": {},
             "checkup_webhook_url": {},
             "checkup_websocket": {},
         },
@@ -90,6 +93,17 @@ async def checkup(req: Request):
     except Exception as exc:
         result["info"]["checkup_ari"] = str(exc)
         result["status"]["checkup_ari"] = "error"
+
+    # 5 Asterisk AMI
+    try:
+        ami = req.app.state.ami
+        result["info"]["checkup_ami"] = {
+            "connected_status": ami.connected,
+            "disconnect_count": ami.disconnect_count,
+        }
+    except Exception as exc:
+        result["info"]["checkup_ami"] = str(exc)
+        result["status"]["checkup_ami"] = "error"
 
     # 3. Webhook connect
     try:

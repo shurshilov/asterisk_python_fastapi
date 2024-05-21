@@ -25,6 +25,8 @@ class Ami:
         self.ami_config = ami_config
         self.api_key_base64 = api_key_base64
         self.webhook_url = webhook_url
+        self.connected = False
+        self.disconnect_count = 0
 
     async def start_catch_events(self):
         try:
@@ -56,9 +58,12 @@ class Ami:
 
     def on_disconnect(self, mngr, exc):
         log.info("AMI disconnect, error: %s", exc)
+        self.connected = False
+        self.disconnect_count += 1
 
     def on_connect(self, mngr):
         log.info("AMI succesfull connected")
+        self.connected = True
 
     async def on_shutdown(self, mngr):
         log.info("AMI shutdown...")
