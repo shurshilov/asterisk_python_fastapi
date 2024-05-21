@@ -38,8 +38,8 @@ log_file_handler = RotatingFileHandler(
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S",
-    level="INFO",
-    handlers=[log_file_handler],
+    level="DEBUG",
+    handlers=[log_file_handler, logging.StreamHandler(sys.stdout)],
 )
 
 log = logging.getLogger("asterisk_agent")
