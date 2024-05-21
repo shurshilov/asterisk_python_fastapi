@@ -44,7 +44,7 @@ class Ari:
             path = "endpoints"
 
             response = await client.get(
-                f"{posixpath.join(self.ari_url, path)}",
+                posixpath.join(self.ari_url, path),
                 params={"api_key": self.api_key},
             )
             return response.text
@@ -56,7 +56,7 @@ class Ari:
             log.info("Start call recording %s", path)
 
             response = await client.get(
-                f"{posixpath.join(self.ari_url, path)}",
+                posixpath.join(self.ari_url, path),
                 params={"api_key": self.api_key},
             )
             log.info("End call recording %s", response)

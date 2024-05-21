@@ -4,12 +4,41 @@
 import base64
 from typing import Annotated, Literal
 
-from pydantic import UrlConstraints
+from pydantic import BaseModel, Field, UrlConstraints
 from pydantic_core import Url
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 HttpURL = Annotated[Url, UrlConstraints(allowed_schemes=["http", "https"], max_length=2048)]
 WsURL = Annotated[Url, UrlConstraints(allowed_schemes=["ws", "wss"], max_length=2048)]
+TcpPort = Annotated[int, Field(ge=0, le=65535)]
+
+
+class DbConfig(BaseModel):
+    db_host: str
+    db_port: TcpPort
+    db_database: str
+    db_user: str
+    db_password: str
+    db_dialect: Literal["mysql", "postgresql", "sqlite"]
+    db_table_cdr_name: str
+
+
+class AriConfig(BaseModel):
+    url: HttpURL
+    wss: WsURL
+    login: str
+    password: str
+    events_ignore: list[str]
+    events_used: list[str]
+
+
+class AmiConfig(BaseModel):
+    host: str
+    port: TcpPort
+    login: str
+    password: str
+    events_ignore: list[str]
+    events_used: list[str]
 
 
 class Config(BaseSettings):
@@ -21,12 +50,10 @@ class Config(BaseSettings):
     path_recordings: str
     # webhook
     webhook_url: HttpURL
-    webhook_events_denied: list[str]
-    webhook_events_allow: list[str]
 
     # DB
     db_host: str
-    db_port: int
+    db_port: TcpPort
     db_database: str
     db_user: str
     db_password: str
@@ -38,6 +65,38 @@ class Config(BaseSettings):
     ari_wss: WsURL
     ari_login: str
     ari_password: str
+    ari_events_ignore: list[str]
+    ari_events_used: list[str]
+
+    # AMI
+    ami_host: str
+    ami_port: TcpPort
+    ami_login: str
+    ami_password: str
+    ami_events_ignore: list[str]
+    ami_events_used: list[str]
+
+    @property
+    def ari_config(self):
+        return AriConfig(
+            url=self.ari_url,
+            wss=self.ari_wss,
+            login=self.ari_login,
+            password=self.ari_password,
+            events_ignore=self.ari_events_ignore,
+            events_used=self.ari_events_used,
+        )
+
+    @property
+    def ami_config(self):
+        return AmiConfig(
+            host=self.ami_host,
+            port=self.ami_port,
+            login=self.ami_login,
+            password=self.ami_password,
+            events_ignore=self.ami_events_ignore,
+            events_used=self.ami_events_used,
+        )
 
     @property
     def api_key(self):

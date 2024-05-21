@@ -22,6 +22,9 @@ from dependencies.db import get_db_connector
 from exceptions.exceptions import AuthError, BusinessError
 from routers.routers import router
 from schemas.config_schema import Config
+from services.ami import Ami
+
+# from services.ami_new import Ami as AmiNew
 from services.ari import Ari
 from services.websocket import WebsocketEvents
 
@@ -35,7 +38,7 @@ log_file_handler = RotatingFileHandler(
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S",
-    level="DEBUG",
+    level="INFO",
     handlers=[log_file_handler, logging.StreamHandler(sys.stdout)],
 )
 
@@ -134,19 +137,12 @@ async def catch_exception_internal(req: Request, exc: Exception):
 
 async def producer_webhook(config: Config, timeout: int = 30) -> None:
     """Producer send events to cusomer webhook from config file"""
-    websocket_url = f"{config.ari_wss}".rstrip("/")
-    webhook_url = f"{config.webhook_url}"
-    ari_url = f"{config.ari_url}"
-
     websocket_client = WebsocketEvents(
-        ari_url=ari_url,
-        websocket_url=websocket_url,
-        webhook_url=webhook_url,
-        timeout=timeout,
+        ari_config=config.ari_config,
         api_key=config.api_key,
         api_key_base64=config.api_key_base64,
-        webhook_events_denied=config.webhook_events_denied,
-        webhook_events_allow=config.webhook_events_allow,
+        webhook_url=f"{config.webhook_url}",
+        timeout=timeout,
     )
     app.state.websocket_client = websocket_client
 
@@ -159,9 +155,20 @@ async def start() -> None:
     # read and validate config file
     config = Config()  # type: ignore
     ari = Ari(api_key=config.api_key, ari_url=str(config.ari_url))
+    # ami = AmiNew(
+    #     ami_config=config.ami_config,
+    #     api_key_base64=config.api_key_base64,
+    #     webhook_url=str(config.webhook_url),
+    # )
+    ami = Ami(
+        ami_config=config.ami_config,
+        api_key_base64=config.api_key_base64,
+        webhook_url=str(config.webhook_url),
+    )
 
     app.state.config = config
     app.state.ari = ari
+    app.state.ami = ami
     app.state.connector_database = get_db_connector(config)
 
     log.info("start check cdr version...")
@@ -170,6 +177,8 @@ async def start() -> None:
     except Exception as exc:
         log.exception("Unknown check_cdr_old error: %s", exc)
     log.info("end check cdr version")
+
+    asyncio.gather(ami.start_catch_events())
 
     app.state.background_tasks = [
         asyncio.create_task(producer_webhook(config)),

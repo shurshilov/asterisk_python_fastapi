@@ -9,6 +9,8 @@ import logging
 import httpx
 import websockets
 
+from schemas.config_schema import AriConfig
+
 log = logging.getLogger("asterisk_agent")
 
 
@@ -31,29 +33,27 @@ class WebsocketEvents:
 
     def __init__(
         self,
-        ari_url: str,
-        websocket_url: str,
-        webhook_url: str,
-        timeout: int,
         api_key_base64: str,
         api_key: str,
-        webhook_events_denied: list[str],
-        webhook_events_allow: list[str],
+        ari_config: AriConfig,
+        webhook_url: str,
+        timeout: int,
     ) -> None:
         super().__init__()
-        self.ari_url = ari_url
-        self.api_key = api_key
+        websocket_url = f"{ari_config.wss}".rstrip("/")
+        self.api_key_base64 = api_key_base64
+
         self.websocket_url = (
             f"{websocket_url}?api_key={api_key}&app=AsteriskAgentPython&subscribeAll=true"
         )
         self.webhook_url = webhook_url
         self.timeout = timeout
-        self.api_key_base64 = api_key_base64
-        self.webhook_events_denied = webhook_events_denied
-        self.webhook_events_allow = webhook_events_allow
+
+        self.webhook_events_ignore = ari_config.events_ignore
+        self.webhook_events_used = ari_config.events_used
 
     async def send_webhook_event(self, payload: dict):
-        """send asterisk event to customer webhook url
+        """send asterisk ari event to customer webhook url
 
         Arguments:
             payload -- asterisk event
@@ -190,20 +190,20 @@ class WebsocketEvents:
             async with websockets.connect(self.websocket_url) as websocket:
                 self.connected = True
                 self.last_connected_time = str(datetime.datetime.now())
-                log.info("Connected to server succesfully")
+                log.info("Connected to ARI websocket server succesfully")
                 # subscribe = await self.send_subscribe()
                 # log.info(subscribe)
 
                 while True:
                     message = await websocket.recv()
                     message_json = json.loads(message)
-                    if message_json["type"] in self.webhook_events_denied:
+                    if message_json["type"] in self.webhook_events_ignore:
                         continue
 
                     log.info("Received: %s", message)
 
-                    if self.webhook_events_allow:
-                        if message_json["type"] not in self.webhook_events_allow:
+                    if self.webhook_events_used:
+                        if message_json["type"] not in self.webhook_events_used:
                             continue
 
                     self.answer_last_message_time = str(datetime.datetime.now())
