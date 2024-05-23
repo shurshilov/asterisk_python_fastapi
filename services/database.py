@@ -56,6 +56,20 @@ class DatabaseStrategy:
             cdr list of calls
         """
 
+    async def get_cel(self, start_date, end_date):
+        """Return events history
+
+        Arguments:
+            start_date -- start date
+            end_date -- end date
+
+        Raises:
+            BusinessError: The start date cannot be greater than or equal to the end date
+
+        Returns:
+            cel list of events
+        """
+
 
 class SqliteStrategy(DatabaseStrategy):
     async def check_cdr_old(self):
@@ -79,6 +93,21 @@ class SqliteStrategy(DatabaseStrategy):
             database.row_factory = aiosqlite.Row
             async with database.execute(
                 f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
+                [start_date, end_date],
+            ) as cursor:
+                async for row in cursor:
+                    result.append(row)
+        return result
+
+    async def get_cel(self, start_date, end_date):
+        import aiosqlite
+
+        # host==path "/var/lib/asterisk/astdb.sqlite3"
+        result = []
+        async with aiosqlite.connect(self.config.db_host) as database:
+            database.row_factory = aiosqlite.Row
+            async with database.execute(
+                f"SELECT * FROM cel where eventtime >= %s and eventtime <= %s limit 100000;",
                 [start_date, end_date],
             ) as cursor:
                 async for row in cursor:
@@ -123,6 +152,17 @@ class MysqlStrategy(DatabaseStrategy):
         conn.close()
         return rows
 
+    async def get_cel(self, start_date, end_date):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute(
+            f"SELECT * FROM cel where eventtime >= %s and eventtime <= %s limit 100000;",
+            (start_date, end_date),
+        )
+        rows = await cur.fetchall()
+        await cur.close()
+        conn.close()
+        return rows
+
 
 class PostgresqlStrategy(DatabaseStrategy):
     async def get_conn_cur(self):
@@ -149,6 +189,16 @@ class PostgresqlStrategy(DatabaseStrategy):
         conn, cur = await self.get_conn_cur()
         await cur.execute(
             f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
+            (start_date, end_date),
+        )
+        rows = await cur.fetchall()
+        await conn.close()
+        return rows
+
+    async def get_cel(self, start_date, end_date):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute(
+            f"SELECT * FROM cel where eventtime >= %s and eventtime <= %s limit 100000;",
             (start_date, end_date),
         )
         rows = await cur.fetchall()

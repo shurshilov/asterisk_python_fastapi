@@ -52,6 +52,7 @@ class Config(BaseSettings):
     webhook_url: HttpURL
 
     # DB
+    db_check_cdr_enable: int
     db_host: str
     db_port: TcpPort
     db_database: str
@@ -61,6 +62,7 @@ class Config(BaseSettings):
     db_table_cdr_name: str
 
     # ARI
+    ari_enable: int
     ari_url: HttpURL
     ari_wss: WsURL
     ari_login: str
@@ -69,6 +71,7 @@ class Config(BaseSettings):
     ari_events_used: list[str]
 
     # AMI
+    ami_enable: int
     ami_host: str
     ami_port: TcpPort
     ami_login: str

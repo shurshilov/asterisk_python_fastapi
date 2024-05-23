@@ -20,7 +20,10 @@ from starlette.status import (
 from const import VERSION
 from dependencies.db import get_db_connector
 from exceptions.exceptions import AuthError, BusinessError
-from routers.routers import router
+from routers.checkup import router as checkup
+from routers.history_calls import router as history_calls
+from routers.history_events import router as history_events
+from routers.recordings import router as recordings
 from schemas.config_schema import Config
 from services.ami import Ami
 
@@ -108,7 +111,10 @@ app.mount(
     name="static",
 )
 
-app.include_router(router)
+app.include_router(checkup)
+app.include_router(recordings)
+app.include_router(history_events)
+app.include_router(history_calls)
 
 
 @app.exception_handler(BusinessError)
@@ -155,6 +161,7 @@ async def start() -> None:
     # read and validate config file
     config = Config()  # type: ignore
     ari = Ari(api_key=config.api_key, ari_url=str(config.ari_url))
+
     # ami = AmiNew(
     #     ami_config=config.ami_config,
     #     api_key_base64=config.api_key_base64,
@@ -166,23 +173,27 @@ async def start() -> None:
         webhook_url=str(config.webhook_url),
     )
 
+    app.state.background_tasks = []
     app.state.config = config
     app.state.ari = ari
     app.state.ami = ami
     app.state.connector_database = get_db_connector(config)
 
-    log.info("start check cdr version...")
-    try:
-        await app.state.connector_database.check_cdr_old()
-    except Exception as exc:
-        log.exception("Unknown check_cdr_old error: %s", exc)
-    log.info("end check cdr version")
+    if config.db_check_cdr_enable:
+        log.info("start check cdr version...")
+        try:
+            await app.state.connector_database.check_cdr_old()
+        except Exception as exc:
+            log.exception("Unknown check_cdr_old error: %s", exc)
+        log.info("end check cdr version")
 
-    asyncio.gather(ami.start_catch_events())
+    if config.ami_enable:
+        asyncio.gather(ami.start_catch_events())
 
-    app.state.background_tasks = [
-        asyncio.create_task(producer_webhook(config)),
-    ]
+    if config.ari_enable:
+        app.state.background_tasks = [
+            asyncio.create_task(producer_webhook(config)),
+        ]
 
 
 @app.on_event("shutdown")
