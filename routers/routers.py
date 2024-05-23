@@ -42,6 +42,10 @@ async def checkup(req: Request):
     result = {
         "vesrion": VERSION,
         "webhook_url": f"{config.webhook_url}",
+        "ari_events_ignore": config.ari_events_ignore,
+        "ari_events_used": config.ari_events_used,
+        "ami_events_ignore": config.ami_events_ignore,
+        "ami_events_used": config.ami_events_used,
         "status": {
             "checkup_db": "ok",
             "checkup_ari": "ok",
@@ -110,7 +114,7 @@ async def checkup(req: Request):
         async with httpx.AsyncClient() as client:
             url = f"{config.webhook_url}"
 
-            checkup_webhook_url = await client.get(url)
+            checkup_webhook_url = await client.post(url)
 
             result["info"]["checkup_webhook_url"] = f"status code {checkup_webhook_url.status_code}"
             if checkup_webhook_url.status_code != 200:
