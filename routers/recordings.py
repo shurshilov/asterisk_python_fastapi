@@ -1,7 +1,6 @@
 # Copyright 2024 Artem Shurshilov
 # Apache License Version 2.0
 
-import json
 import logging
 import os
 import urllib.parse
@@ -16,21 +15,6 @@ from services.ari import Ari
 
 log = logging.getLogger("asterisk_agent")
 router = APIRouter(tags=["API"], dependencies=[Depends(verify_basic_auth)])
-
-
-@router.get("/api/numbers/")
-async def numbers(req: Request):
-    """Return numbers (endpoints) Asterisk
-
-    Returns:
-        list of numbers
-    """
-    log.info("NUMBERS")
-
-    ari: Ari = req.app.state.ari
-    # answer already in json
-    res = await ari.numbers()
-    return json.loads(res)
 
 
 @router.get("/api/call/recording/ari")

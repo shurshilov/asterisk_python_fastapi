@@ -48,12 +48,6 @@ class DatabaseStrategy:
         Arguments:
             start_date -- start date of calls
             end_date -- end date of calls
-
-        Raises:
-            BusinessError: The start date cannot be greater than or equal to the end date
-
-        Returns:
-            cdr list of calls
         """
 
     async def get_cel(self, start_date, end_date):
@@ -62,13 +56,16 @@ class DatabaseStrategy:
         Arguments:
             start_date -- start date
             end_date -- end date
-
-        Raises:
-            BusinessError: The start date cannot be greater than or equal to the end date
-
-        Returns:
-            cel list of events
         """
+
+    async def get_ring_groups(self):
+        """Return ring groups"""
+
+    async def get_queues_config(self):
+        """Return queues config"""
+
+    async def get_findmefollow(self):
+        """Return redrects"""
 
 
 class SqliteStrategy(DatabaseStrategy):
@@ -110,6 +107,39 @@ class SqliteStrategy(DatabaseStrategy):
                 f"SELECT * FROM cel where eventtime >= %s and eventtime <= %s limit 100000;",
                 [start_date, end_date],
             ) as cursor:
+                async for row in cursor:
+                    result.append(row)
+        return result
+
+    async def get_ring_groups(self):
+        import aiosqlite
+
+        result = []
+        async with aiosqlite.connect(self.config.db_host) as database:
+            database.row_factory = aiosqlite.Row
+            async with database.execute("select * from asterisk.ringgroups;") as cursor:
+                async for row in cursor:
+                    result.append(row)
+        return result
+
+    async def get_queues_config(self):
+        import aiosqlite
+
+        result = []
+        async with aiosqlite.connect(self.config.db_host) as database:
+            database.row_factory = aiosqlite.Row
+            async with database.execute("select * from asterisk.queues_config;") as cursor:
+                async for row in cursor:
+                    result.append(row)
+        return result
+
+    async def get_findmefollow(self):
+        import aiosqlite
+
+        result = []
+        async with aiosqlite.connect(self.config.db_host) as database:
+            database.row_factory = aiosqlite.Row
+            async with database.execute("select * from asterisk.findmefollow;") as cursor:
                 async for row in cursor:
                     result.append(row)
         return result
@@ -163,6 +193,30 @@ class MysqlStrategy(DatabaseStrategy):
         conn.close()
         return rows
 
+    async def get_ring_groups(self):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute("select * from asterisk.ringgroups;")
+        rows = await cur.fetchall()
+        await cur.close()
+        conn.close()
+        return rows
+
+    async def get_queues_config(self):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute("select * from asterisk.queues_config;")
+        rows = await cur.fetchall()
+        await cur.close()
+        conn.close()
+        return rows
+
+    async def get_findmefollow(self):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute("select * from asterisk.findmefollow;")
+        rows = await cur.fetchall()
+        await cur.close()
+        conn.close()
+        return rows
+
 
 class PostgresqlStrategy(DatabaseStrategy):
     async def get_conn_cur(self):
@@ -201,6 +255,27 @@ class PostgresqlStrategy(DatabaseStrategy):
             f"SELECT * FROM cel where eventtime >= %s and eventtime <= %s limit 100000;",
             (start_date, end_date),
         )
+        rows = await cur.fetchall()
+        await conn.close()
+        return rows
+
+    async def get_ring_groups(self):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute("select * from asterisk.ringgroups;")
+        rows = await cur.fetchall()
+        await conn.close()
+        return rows
+
+    async def get_queues_config(self):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute("select * from asterisk.queues_config;")
+        rows = await cur.fetchall()
+        await conn.close()
+        return rows
+
+    async def get_findmefollow(self):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute("select * from asterisk.findmefollow;")
         rows = await cur.fetchall()
         await conn.close()
         return rows

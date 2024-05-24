@@ -23,6 +23,7 @@ from exceptions.exceptions import AuthError, BusinessError
 from routers.checkup import router as checkup
 from routers.history_calls import router as history_calls
 from routers.history_events import router as history_events
+from routers.numbers import router as numbers
 from routers.recordings import router as recordings
 from schemas.config_schema import Config
 from services.ami import Ami
@@ -115,6 +116,7 @@ app.include_router(checkup)
 app.include_router(recordings)
 app.include_router(history_events)
 app.include_router(history_calls)
+app.include_router(numbers)
 
 
 @app.exception_handler(BusinessError)
