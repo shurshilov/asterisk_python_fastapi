@@ -8,6 +8,7 @@ from pydantic import AwareDatetime
 
 from dependencies.auth import verify_basic_auth
 from exceptions.exceptions import BusinessError
+from schemas.config_schema import Id
 from services.database import MysqlStrategy, PostgresqlStrategy, SqliteStrategy
 
 log = logging.getLogger("asterisk_agent")
@@ -15,12 +16,17 @@ router = APIRouter(tags=["API"], dependencies=[Depends(verify_basic_auth)])
 
 
 @router.get("/api/calls/hisroty/")
-async def calls_history(req: Request, start_date: AwareDatetime, end_date: AwareDatetime):
-    """Return calls history
-
+async def calls_history(
+    req: Request,
+    start_date: AwareDatetime,
+    end_date: AwareDatetime,
+    uniqueid: Id = None,
+):
+    """
     Arguments:
         start_date -- start date
         end_date -- end date
+        uniqueid -- id of call in asterisk
 
     Raises:
         BusinessError: The start date cannot be greater than or equal to the end date
@@ -37,4 +43,4 @@ async def calls_history(req: Request, start_date: AwareDatetime, end_date: Aware
         req.app.state.connector_database
     )
 
-    return await connector_database.get_cdr(start_date, end_date)
+    return await connector_database.get_cdr(start_date, end_date, uniqueid)
