@@ -11,7 +11,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 HttpURL = Annotated[Url, UrlConstraints(allowed_schemes=["http", "https"], max_length=2048)]
 WsURL = Annotated[Url, UrlConstraints(allowed_schemes=["ws", "wss"], max_length=2048)]
 TcpPort = Annotated[int, Field(ge=0, le=65535)]
-Id = Annotated[int, Field(ge=1, le=4294967295)]
+# Id = Annotated[int, Field(ge=1, le=4294967295)]
+Id = Annotated[str, Field(max_length=128, min_length=3)]
 
 
 class DbConfig(BaseModel):

@@ -42,13 +42,19 @@ class DatabaseStrategy:
     async def check_cdr_old(self):
         """Check that Asterisk cdr have start column or not"""
 
+    async def get_cdr_uniqueid(self, uniqueid):
+        """Return calls history
+
+        Arguments:
+            uniqueid -- id of call in asterisk
+        """
+
     async def get_cdr(self, start_date, end_date, uniqueid=None):
         """Return calls history
 
         Arguments:
             start_date -- start date of calls
             end_date -- end date of calls
-            uniqueid -- id of call in asterisk
         """
 
     async def get_cel(self, start_date, end_date):
@@ -82,27 +88,32 @@ class SqliteStrategy(DatabaseStrategy):
                     self.cdr_start_field = "calldate"
                     return
 
-    async def get_cdr(self, start_date, end_date, uniqueid=None):
+    async def get_cdr_uniqueid(self, uniqueid):
         import aiosqlite
 
-        # host==path "/var/lib/asterisk/astdb.sqlite3"
         result = []
         async with aiosqlite.connect(self.config.db_host) as database:
             database.row_factory = aiosqlite.Row
-            if uniqueid:
-                async with database.execute(
-                    f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid= %s limit 1;",
-                    [uniqueid],
-                ) as cursor:
-                    async for row in cursor:
-                        result.append(row)
-            else:
-                async with database.execute(
-                    f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
-                    [start_date, end_date],
-                ) as cursor:
-                    async for row in cursor:
-                        result.append(row)
+            async with database.execute(
+                f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid= %s limit 1;",
+                [uniqueid],
+            ) as cursor:
+                async for row in cursor:
+                    result.append(row)
+        return result
+
+    async def get_cdr(self, start_date, end_date):
+        import aiosqlite
+
+        result = []
+        async with aiosqlite.connect(self.config.db_host) as database:
+            database.row_factory = aiosqlite.Row
+            async with database.execute(
+                f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
+                [start_date, end_date],
+            ) as cursor:
+                async for row in cursor:
+                    result.append(row)
         return result
 
     async def get_cel(self, start_date, end_date):
@@ -180,18 +191,23 @@ class MysqlStrategy(DatabaseStrategy):
             self.cdr_start_field = "calldate"
             return
 
-    async def get_cdr(self, start_date, end_date, uniqueid=None):
+    async def get_cdr_uniqueid(self, uniqueid):
         conn, cur = await self.get_conn_cur()
-        if uniqueid:
-            await cur.execute(
-                f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid = %s limit 1;",
-                (uniqueid),
-            )
-        else:
-            await cur.execute(
-                f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
-                (start_date, end_date),
-            )
+        await cur.execute(
+            f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid = %s limit 1;",
+            (uniqueid),
+        )
+        rows = await cur.fetchall()
+        await cur.close()
+        conn.close()
+        return rows
+
+    async def get_cdr(self, start_date, end_date):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute(
+            f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
+            (start_date, end_date),
+        )
         rows = await cur.fetchall()
         await cur.close()
         conn.close()
@@ -254,18 +270,22 @@ class PostgresqlStrategy(DatabaseStrategy):
             self.cdr_start_field = "calldate"
             return
 
-    async def get_cdr(self, start_date, end_date, uniqueid=None):
+    async def get_cdr_uniqueid(self, uniqueid):
         conn, cur = await self.get_conn_cur()
-        if uniqueid:
-            await cur.execute(
-                f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid = %s limit 1;",
-                (uniqueid),
-            )
-        else:
-            await cur.execute(
-                f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
-                (start_date, end_date),
-            )
+        await cur.execute(
+            f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid = %s limit 1;",
+            (uniqueid),
+        )
+        rows = await cur.fetchall()
+        await conn.close()
+        return rows
+
+    async def get_cdr(self, start_date, end_date):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute(
+            f"SELECT * FROM {self.config.db_table_cdr_name} where {self.cdr_start_field} >= %s and {self.cdr_start_field} <= %s limit 100000;",
+            (start_date, end_date),
+        )
         rows = await cur.fetchall()
         await conn.close()
         return rows

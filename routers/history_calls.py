@@ -15,18 +15,26 @@ log = logging.getLogger("asterisk_agent")
 router = APIRouter(tags=["API"], dependencies=[Depends(verify_basic_auth)])
 
 
-@router.get("/api/calls/hisroty/")
-async def calls_history(
+@router.get("/api/calls/hisroty/uniqueid")
+async def calls_history_uniqueid(
     req: Request,
-    start_date: AwareDatetime,
-    end_date: AwareDatetime,
-    uniqueid: Id = None,
+    uniqueid: Id,
 ):
+    log.info("HISTORY UNIQUEID")
+
+    connector_database: PostgresqlStrategy | MysqlStrategy | SqliteStrategy = (
+        req.app.state.connector_database
+    )
+
+    return await connector_database.get_cdr_uniqueid(uniqueid)
+
+
+@router.get("/api/calls/hisroty/")
+async def calls_history(req: Request, start_date: AwareDatetime, end_date: AwareDatetime):
     """
     Arguments:
         start_date -- start date
         end_date -- end date
-        uniqueid -- id of call in asterisk
 
     Raises:
         BusinessError: The start date cannot be greater than or equal to the end date
@@ -43,4 +51,4 @@ async def calls_history(
         req.app.state.connector_database
     )
 
-    return await connector_database.get_cdr(start_date, end_date, uniqueid)
+    return await connector_database.get_cdr(start_date, end_date)
