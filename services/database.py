@@ -95,7 +95,7 @@ class SqliteStrategy(DatabaseStrategy):
         async with aiosqlite.connect(self.config.db_host) as database:
             database.row_factory = aiosqlite.Row
             async with database.execute(
-                f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid= %s limit 1;",
+                f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid= %s;",
                 [uniqueid],
             ) as cursor:
                 async for row in cursor:
@@ -194,7 +194,7 @@ class MysqlStrategy(DatabaseStrategy):
     async def get_cdr_uniqueid(self, uniqueid):
         conn, cur = await self.get_conn_cur()
         await cur.execute(
-            f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid = %s limit 1;",
+            f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid = %s;",
             (uniqueid),
         )
         rows = await cur.fetchall()
@@ -273,7 +273,7 @@ class PostgresqlStrategy(DatabaseStrategy):
     async def get_cdr_uniqueid(self, uniqueid):
         conn, cur = await self.get_conn_cur()
         await cur.execute(
-            f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid = %s limit 1;",
+            f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid = %s;",
             (uniqueid),
         )
         rows = await cur.fetchall()
