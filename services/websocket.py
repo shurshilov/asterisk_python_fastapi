@@ -28,8 +28,10 @@ class WebsocketEvents:
     no_answer_last_message_time = ""
     no_answer_last_message = {}
     last_connected_time = ""
+    last_try_connected_time = ""
     connected = False
     disconnected_reason = ""
+    disconnected_time = ""
 
     def __init__(
         self,
@@ -187,6 +189,7 @@ class WebsocketEvents:
             }
         """
         try:
+            self.last_try_connected_time = str(datetime.datetime.now())
             async with websockets.connect(self.websocket_url) as websocket:
                 self.connected = True
                 self.last_connected_time = str(datetime.datetime.now())
@@ -218,5 +221,6 @@ class WebsocketEvents:
             log.exception("Unknown start_consumer error: %s", exc)
             self.connected = False
             self.disconnected_reason = str(exc)
+            self.disconnected_time = str(datetime.datetime.now())
             await asyncio.sleep(self.timeout)
             await self.start_consumer()

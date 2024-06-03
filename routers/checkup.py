@@ -115,14 +115,13 @@ async def checkup(req: Request):
             "no_answer_last_message_time": req.app.state.websocket_client.no_answer_last_message_time,
             "no_answer_last_message": req.app.state.websocket_client.no_answer_last_message,
             "last_connected_time": req.app.state.websocket_client.last_connected_time,
+            "last_try_connected_time": req.app.state.websocket_client.last_try_connected_time,
             "connected": req.app.state.websocket_client.connected,
+            "disconnected_time": req.app.state.websocket_client.disconnected_time,
+            "disconnected_reason": req.app.state.websocket_client.disconnected_reason,
         }
         if not req.app.state.websocket_client.connected:
             result["status"]["checkup_websocket"] = "error"
-        if req.app.state.websocket_client.disconnected_reason:
-            result["info"]["checkup_websocket"][
-                "disconnected_reason"
-            ] = req.app.state.websocket_client.disconnected_reason
     except Exception as exc:
         result["info"]["checkup_websocket"]["error"] = str(exc)
         result["status"]["checkup_websocket"] = "error"
