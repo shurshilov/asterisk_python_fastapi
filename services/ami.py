@@ -4,7 +4,7 @@
 import logging
 import posixpath
 
-import httpx
+import requests
 from panoramisk import Manager
 
 from schemas.config_schema import AmiConfig
@@ -68,7 +68,7 @@ class Ami:
     async def on_shutdown(self, mngr):
         log.info("AMI shutdown...")
 
-    async def send_webhook_event(self, manager, payload: dict):
+    def send_webhook_event(self, manager, payload: dict):
         """send asterisk ami event to customer webhook url
 
         Arguments:
@@ -77,14 +77,13 @@ class Ami:
         try:
             log.info("AMI event:")
             log.info(payload)
-            async with httpx.AsyncClient() as client:
-                res = await client.post(
-                    posixpath.join(self.webhook_url, "ami"),
-                    json=payload,
-                    headers={
-                        "Authorization": f"Basic {self.api_key_base64}",
-                    },
-                )
-                res.raise_for_status()
+            res = requests.post(
+                posixpath.join(self.webhook_url, "ami"),
+                json=dict(payload),
+                headers={
+                    "Authorization": f"Basic {self.api_key_base64}",
+                },
+            )
+            res.raise_for_status()
         except Exception as exc:
             log.exception("Unknown AMI send_webhook_event error: %s", exc)
