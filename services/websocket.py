@@ -32,6 +32,7 @@ class WebsocketEvents:
     connected = False
     disconnected_reason = ""
     disconnected_time = ""
+    disconnect_count = 0
 
     def __init__(
         self,
@@ -220,6 +221,7 @@ class WebsocketEvents:
         except Exception as exc:
             log.exception("Unknown start_consumer error: %s", exc)
             self.connected = False
+            self.disconnect_count += 1
             self.disconnected_reason = str(exc)
             self.disconnected_time = str(datetime.datetime.now())
             await asyncio.sleep(self.timeout)
