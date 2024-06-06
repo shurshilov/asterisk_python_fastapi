@@ -47,7 +47,7 @@ class WebsocketEvents:
         self.api_key_base64 = api_key_base64
 
         self.websocket_url = (
-            f"{websocket_url}?api_key={api_key}&app=AsteriskAgentPythonDev&subscribeAll=true"
+            f"{websocket_url}?api_key={api_key}&app=AsteriskAgentPython&subscribeAll=true"
         )
         self.webhook_url = webhook_url
         self.timeout = timeout
@@ -224,5 +224,6 @@ class WebsocketEvents:
             self.disconnect_count += 1
             self.disconnected_reason = str(exc)
             self.disconnected_time = str(datetime.datetime.now())
+            raise exc
             # await asyncio.sleep(self.timeout)
             # await self.start_consumer()

@@ -145,22 +145,24 @@ async def catch_exception_internal(req: Request, exc: Exception):
 
 async def producer_webhook(config: Config, timeout: int = 30) -> None:
     """Producer send events to cusomer webhook from config file"""
+
     while True:
         try:
-            websocket_client = WebsocketEvents(
-                ari_config=config.ari_config,
-                api_key=config.api_key,
-                api_key_base64=config.api_key_base64,
-                webhook_url=f"{config.webhook_url}",
-                timeout=timeout,
-            )
-            app.state.websocket_client = websocket_client
+            if not app.state.websocket_client:
+                websocket_client = WebsocketEvents(
+                    ari_config=config.ari_config,
+                    api_key=config.api_key,
+                    api_key_base64=config.api_key_base64,
+                    webhook_url=f"{config.webhook_url}",
+                    timeout=timeout,
+                )
+                app.state.websocket_client = websocket_client
 
             await websocket_client.start_consumer()
         except asyncio.CancelledError:
             break
-        except Exception as e:
-            log.exception("Unknown producer_webhook error: %s", e)
+        except Exception as exc:
+            log.exception("Unknown producer_webhook error: %s", exc)
         finally:
             await asyncio.sleep(timeout)
 
