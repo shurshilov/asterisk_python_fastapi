@@ -224,5 +224,5 @@ class WebsocketEvents:
             self.disconnect_count += 1
             self.disconnected_reason = str(exc)
             self.disconnected_time = str(datetime.datetime.now())
-            await asyncio.sleep(self.timeout)
-            await self.start_consumer()
+            # await asyncio.sleep(self.timeout)
+            # await self.start_consumer()
