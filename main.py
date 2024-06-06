@@ -148,7 +148,7 @@ async def producer_webhook(config: Config, timeout: int = 30) -> None:
 
     while True:
         try:
-            if not app.state.websocket_client:
+            if not getattr(app.state, "websocket_client", None):
                 websocket_client = WebsocketEvents(
                     ari_config=config.ari_config,
                     api_key=config.api_key,
