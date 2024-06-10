@@ -29,6 +29,20 @@ async def calls_history_uniqueid(
     return await connector_database.get_cdr_uniqueid_or_linkedid(uniqueid)
 
 
+@router.get("/api/calls/hisroty/uniqueid_or_linkedid")
+async def calls_history_uniqueid_or_linkedid(
+    req: Request,
+    uniqueid: Id,
+):
+    log.info("HISTORY UNIQUEID OR LINKEDID")
+
+    connector_database: PostgresqlStrategy | MysqlStrategy | SqliteStrategy = (
+        req.app.state.connector_database
+    )
+
+    return await connector_database.get_cdr_uniqueid_or_linkedid(uniqueid)
+
+
 @router.get("/api/calls/hisroty/")
 async def calls_history(req: Request, start_date: AwareDatetime, end_date: AwareDatetime):
     """
