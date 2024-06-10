@@ -26,7 +26,7 @@ async def calls_history_uniqueid(
         req.app.state.connector_database
     )
 
-    return await connector_database.get_cdr_uniqueid(uniqueid)
+    return await connector_database.get_cdr_uniqueid_or_linkedid(uniqueid)
 
 
 @router.get("/api/calls/hisroty/")

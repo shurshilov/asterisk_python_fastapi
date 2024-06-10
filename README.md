@@ -64,7 +64,7 @@ uvicorn main:app --host 127.0.0.1 --port 8082 --log-level debug
 ```
 or
 ```bash
-python3 -m uvicorn main:app --host 127.0.0.1 --port 8082 --log-level debug
+python3 -m uvicorn main:app --host 127.0.0.1 --port 8082 --log-level debug --workers 2
 ```
 
 ### 2 Variant. Start on docker.

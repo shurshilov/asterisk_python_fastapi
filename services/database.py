@@ -49,6 +49,13 @@ class DatabaseStrategy:
             uniqueid -- id of call in asterisk
         """
 
+    async def get_cdr_uniqueid_or_linkedid(self, uniqueid):
+        """Return calls history
+
+        Arguments:
+            uniqueid -- id of call in asterisk
+        """
+
     async def get_cdr(self, start_date, end_date, uniqueid=None):
         """Return calls history
 
@@ -97,6 +104,20 @@ class SqliteStrategy(DatabaseStrategy):
             async with database.execute(
                 f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid= %s;",
                 [uniqueid],
+            ) as cursor:
+                async for row in cursor:
+                    result.append(row)
+        return result
+
+    async def get_cdr_uniqueid_or_linkedid(self, uniqueid):
+        import aiosqlite
+
+        result = []
+        async with aiosqlite.connect(self.config.db_host) as database:
+            database.row_factory = aiosqlite.Row
+            async with database.execute(
+                f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid= %s or linkedid = %s;",
+                [uniqueid, uniqueid],
             ) as cursor:
                 async for row in cursor:
                     result.append(row)
@@ -202,6 +223,17 @@ class MysqlStrategy(DatabaseStrategy):
         conn.close()
         return rows
 
+    async def get_cdr_uniqueid_or_linkedid(self, uniqueid):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute(
+            f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid = %s or linkedid = %s;",
+            (uniqueid, uniqueid),
+        )
+        rows = await cur.fetchall()
+        await cur.close()
+        conn.close()
+        return rows
+
     async def get_cdr(self, start_date, end_date):
         conn, cur = await self.get_conn_cur()
         await cur.execute(
@@ -275,6 +307,16 @@ class PostgresqlStrategy(DatabaseStrategy):
         await cur.execute(
             f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid = %s;",
             (uniqueid),
+        )
+        rows = await cur.fetchall()
+        await conn.close()
+        return rows
+
+    async def get_cdr_uniqueid_or_linkedid(self, uniqueid):
+        conn, cur = await self.get_conn_cur()
+        await cur.execute(
+            f"SELECT * FROM {self.config.db_table_cdr_name} where uniqueid = %s or linkedid = %s;",
+            (uniqueid, uniqueid),
         )
         rows = await cur.fetchall()
         await conn.close()
