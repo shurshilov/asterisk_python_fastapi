@@ -1,5 +1,5 @@
 
-### Asterisk fastapi 1.0.6
+### Asterisk fastapi 1.1.0
 
 Source code [Github](https://github.com/shurshilov/odoo)
 
