@@ -1,5 +1,5 @@
 # установка базового образа (host OS)
-FROM registry.kdp/kdp/python:3.11.4
+FROM python:3.11.4
 
 ENV WORKDIR=/usr/src/app
 
