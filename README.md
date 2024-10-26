@@ -9,13 +9,15 @@ Source code [Github](https://github.com/shurshilov/odoo)
 
 
 ## What is this program for??
-Create web server on the same server as asterix.
+Create web server on the same server as asterisk.
 This server can:
   1. Provide asterisk calls history by http endpoint like start_datetime and end_datetime (mysql,postgresql,sqlite,csv)
   2. Provide webhooks for asterisk. Allows you to send request to your site, for example, an incoming call that was answered or a missed call. Next, your server saves this to the database and notifies clients (browsers) through any mechanism (websockets, longpolling) that a call has arrived and, for example, by calling a pop-up window and creating a lead or opening a partner's card
-  3. Also provide recordngs although they are available in asterix ari, just to address the same address. (essentially a duplication)
+  3. Also provide recordngs although they are available in asterisk ari, just to address the same address. (essentially a duplication)
   4. Endpoint numbers list
   4. Endpoint checkup ( getting the status of the service)
+After launching the service, the documentation with the available endpoints will be at your_ir:8082/docs
+Simple http base authentication is also enabled, the username and password are taken from the config to protect your data in asterisk.
 
 ## How configure Asterisk?
 
@@ -67,7 +69,7 @@ or
 python3 -m uvicorn main:app --host 127.0.0.1 --port 8082 --log-level debug --workers 2
 ```
 
-### 2 Variant. Start on docker.
+### 2 Variant. Start on docker.(no tested)
 
 On your asterist server. Setup docker enviroment.
 
