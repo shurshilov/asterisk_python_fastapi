@@ -1,0 +1,16 @@
+version: '3.4'
+
+services:
+  asterisk-python-backend:
+    # конфигурация для бекенда
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    ports:
+      - 8082:8082
+    volumes:
+      - ./.env:/usr/src/app/.env
+
+networks:
+  dockernet:
+    driver: bridge
